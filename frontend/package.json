@@ -75,7 +75,7 @@
   "engines": {
   "node": "20.x",
   "npm": "10.x"
-}
+},
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@craco/craco": "^7.1.0",
