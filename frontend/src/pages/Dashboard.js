@@ -247,7 +247,17 @@ const Dashboard = () => {
             <RepeatIcon className="w-5 h-5 text-orange-500" />
             <h3 className="text-lg font-bold text-gray-800">Gastos Recorrentes</h3>
           </div>
-          
+
+          {/* Mensagem quando não há dados */}
+          {gastosRecorrentes.categorias_mais_frequentes.length === 0 ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+              <RepeatIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 font-medium mb-2">Nenhum gasto recorrente encontrado</p>
+              <p className="text-sm text-gray-500">
+                Adicione suas despesas para visualizar padrões de gastos frequentes e categorias mais utilizadas.
+              </p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Categorias Mais Frequentes */}
             <div>
