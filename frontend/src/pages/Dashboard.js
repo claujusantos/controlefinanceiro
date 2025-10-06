@@ -258,62 +258,64 @@ const Dashboard = () => {
               </p>
             </div>
           ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Categorias Mais Frequentes */}
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-3">Categorias Mais Frequentes</h4>
-              <div className="space-y-3">
-                {gastosRecorrentes.categorias_mais_frequentes.slice(0, 5).map((cat, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800">{cat.categoria}</p>
-                      <p className="text-xs text-gray-500">{cat.ocorrencias} ocorrências</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-red-600">R$ {cat.valor_total.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">Média: R$ {cat.valor_medio.toFixed(2)}</p>
-                    </div>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Categorias Mais Frequentes */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Categorias Mais Frequentes</h4>
+                  <div className="space-y-3">
+                    {gastosRecorrentes.categorias_mais_frequentes.slice(0, 5).map((cat, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800">{cat.categoria}</p>
+                          <p className="text-xs text-gray-500">{cat.ocorrencias} ocorrências</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-red-600">R$ {cat.valor_total.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">Média: R$ {cat.valor_medio.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Descrições Recorrentes */}
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-3">Despesas que se Repetem</h4>
-              <div className="space-y-3">
-                {gastosRecorrentes.descricoes_recorrentes.slice(0, 5).map((desc, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800">{desc.descricao}</p>
-                      <p className="text-xs text-gray-500">{desc.ocorrencias}x no período</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-orange-600">R$ {desc.valor_total.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">Média: R$ {desc.valor_medio.toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
-                {gastosRecorrentes.descricoes_recorrentes.length === 0 && (
-                  <p className="text-center text-gray-500 py-4">Nenhuma despesa recorrente encontrada</p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Média por Categoria */}
-          <div className="mt-6">
-            <h4 className="text-md font-semibold text-gray-700 mb-3">Média de Gasto por Categoria</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {gastosRecorrentes.media_por_categoria.slice(0, 6).map((cat, index) => (
-                <div key={index} className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                  <p className="text-sm font-medium text-gray-700">{cat.categoria}</p>
-                  <p className="text-xl font-bold text-purple-600 mt-1">R$ {cat.media_gasto.toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">Total: R$ {cat.total_gasto.toFixed(2)}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Descrições Recorrentes */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Despesas que se Repetem</h4>
+                  <div className="space-y-3">
+                    {gastosRecorrentes.descricoes_recorrentes.slice(0, 5).map((desc, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800">{desc.descricao}</p>
+                          <p className="text-xs text-gray-500">{desc.ocorrencias}x no período</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-orange-600">R$ {desc.valor_total.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">Média: R$ {desc.valor_medio.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {gastosRecorrentes.descricoes_recorrentes.length === 0 && (
+                      <p className="text-center text-gray-500 py-4">Nenhuma despesa recorrente encontrada</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Média por Categoria */}
+              <div className="mt-6">
+                <h4 className="text-md font-semibold text-gray-700 mb-3">Média de Gasto por Categoria</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {gastosRecorrentes.media_por_categoria.slice(0, 6).map((cat, index) => (
+                    <div key={index} className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                      <p className="text-sm font-medium text-gray-700">{cat.categoria}</p>
+                      <p className="text-xl font-bold text-purple-600 mt-1">R$ {cat.media_gasto.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">Total: R$ {cat.total_gasto.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
