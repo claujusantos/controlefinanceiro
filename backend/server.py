@@ -257,45 +257,35 @@ async def obter_usuario_atual(usuario: dict = Depends(get_current_user)):
 # ========== CATEGORIAS ENDPOINTS ==========
 
 @api_router.get("/categorias", response_model=List[Categoria])
-async def listar_categorias():
-    categorias = await db.categorias.find().to_list(1000)
-    if not categorias:
-        # Criar categorias padrão
-        categorias_padrao = [
-            {"id": str(uuid.uuid4()), "nome": "Salário", "tipo": "receita", "cor": "#10B981"},
-            {"id": str(uuid.uuid4()), "nome": "Freelance", "tipo": "receita", "cor": "#34D399"},
-            {"id": str(uuid.uuid4()), "nome": "Investimentos", "tipo": "receita", "cor": "#6EE7B7"},
-            {"id": str(uuid.uuid4()), "nome": "Alimentação", "tipo": "despesa", "cor": "#EF4444"},
-            {"id": str(uuid.uuid4()), "nome": "Transporte", "tipo": "despesa", "cor": "#F87171"},
-            {"id": str(uuid.uuid4()), "nome": "Moradia", "tipo": "despesa", "cor": "#FCA5A5"},
-            {"id": str(uuid.uuid4()), "nome": "Lazer", "tipo": "despesa", "cor": "#FCD34D"},
-            {"id": str(uuid.uuid4()), "nome": "Saúde", "tipo": "despesa", "cor": "#FB923C"},
-            {"id": str(uuid.uuid4()), "nome": "Educação", "tipo": "despesa", "cor": "#A78BFA"},
-        ]
-        await db.categorias.insert_many(categorias_padrao)
-        categorias = categorias_padrao
+async def listar_categorias(usuario: dict = Depends(get_current_user)):
+    categorias = await db.categorias.find({"user_id": usuario["id"]}).to_list(1000)
     return [Categoria(**cat) for cat in categorias]
 
 @api_router.post("/categorias", response_model=Categoria)
-async def criar_categoria(input: CategoriaCreate):
+async def criar_categoria(input: CategoriaCreate, usuario: dict = Depends(get_current_user)):
     cat_dict = input.dict()
+    cat_dict["user_id"] = usuario["id"]
     cat_obj = Categoria(**cat_dict)
     await db.categorias.insert_one(cat_obj.dict())
     return cat_obj
 
 @api_router.put("/categorias/{cat_id}", response_model=Categoria)
-async def atualizar_categoria(cat_id: str, input: CategoriaCreate):
+async def atualizar_categoria(cat_id: str, input: CategoriaCreate, usuario: dict = Depends(get_current_user)):
     cat_dict = input.dict()
     cat_dict["id"] = cat_id
+    cat_dict["user_id"] = usuario["id"]
     cat_obj = Categoria(**cat_dict)
-    result = await db.categorias.update_one({"id": cat_id}, {"$set": cat_obj.dict()})
+    result = await db.categorias.update_one(
+        {"id": cat_id, "user_id": usuario["id"]}, 
+        {"$set": cat_obj.dict()}
+    )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     return cat_obj
 
 @api_router.delete("/categorias/{cat_id}")
-async def deletar_categoria(cat_id: str):
-    result = await db.categorias.delete_one({"id": cat_id})
+async def deletar_categoria(cat_id: str, usuario: dict = Depends(get_current_user)):
+    result = await db.categorias.delete_one({"id": cat_id, "user_id": usuario["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     return {"message": "Categoria deletada com sucesso"}
