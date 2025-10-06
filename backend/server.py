@@ -580,7 +580,16 @@ async def obter_projecoes(usuario: dict = Depends(get_current_user)):
             "media_receitas": 0,
             "media_despesas": 0,
             "saldo_projetado": 0,
-            "tendencia": "neutro"
+            "tendencia": "neutro",
+            "projecao_6_meses": [
+                {
+                    "mes": i + 1,
+                    "receita_estimada": 0,
+                    "despesa_estimada": 0,
+                    "saldo_estimado": 0
+                }
+                for i in range(6)
+            ]
         }
     
     # Calcular médias dos últimos 3 meses
