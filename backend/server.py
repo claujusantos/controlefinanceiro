@@ -297,12 +297,12 @@ async def webhook_hotmart(request: dict):
         # Identificar o plano baseado no product_id da Hotmart
         plano_map = {
             # Você vai preencher com os IDs reais dos seus produtos na Hotmart
-            "PRODUCT_ID_BASICO": "basico",
-            "PRODUCT_ID_PRO": "pro",
+            "PRODUCT_ID_MENSAL": "mensal",
+            "PRODUCT_ID_SEMESTRAL": "semestral",
             "PRODUCT_ID_ANUAL": "anual"
         }
         
-        plano = plano_map.get(str(product_id), "pro")
+        plano = plano_map.get(str(product_id), "mensal")
         
         # Buscar usuário pelo email
         usuario = await db.usuarios.find_one({"email": buyer_email})
