@@ -387,8 +387,8 @@ async def criar_checkout_hotmart(plano: str, usuario: dict = Depends(get_current
     """
     # Links de checkout da Hotmart (você vai substituir pelos seus)
     checkout_links = {
-        "basico": "https://pay.hotmart.com/SEU_PRODUTO_BASICO",
-        "pro": "https://pay.hotmart.com/SEU_PRODUTO_PRO",
+        "mensal": "https://pay.hotmart.com/SEU_PRODUTO_MENSAL",
+        "semestral": "https://pay.hotmart.com/SEU_PRODUTO_SEMESTRAL",
         "anual": "https://pay.hotmart.com/SEU_PRODUTO_ANUAL"
     }
     
