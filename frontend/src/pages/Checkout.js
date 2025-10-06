@@ -65,8 +65,8 @@ const Checkout = () => {
   };
 
   useEffect(() => {
-    const plano = searchParams.get('plano') || 'pro';
-    setPlanoSelecionado(plans[plano] || plans.pro);
+    const plano = searchParams.get('plano') || 'semestral';
+    setPlanoSelecionado(plans[plano] || plans.semestral);
   }, [searchParams]);
 
   const handleCheckout = async () => {
