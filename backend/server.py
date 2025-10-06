@@ -385,6 +385,7 @@ async def deletar_despesa(desp_id: str, usuario: dict = Depends(get_current_user
 
 @api_router.get("/dashboard")
 async def obter_dashboard(
+    usuario: dict = Depends(get_current_user),
     periodo: Optional[str] = None,  # "total", "ultimo_mes", "ultimos_6_meses", "customizado"
     data_inicio: Optional[str] = None,  # formato: YYYY-MM-DD
     data_fim: Optional[str] = None  # formato: YYYY-MM-DD
@@ -409,8 +410,8 @@ async def obter_dashboard(
     # Se periodo == "total" ou None, não filtra nada
     
     # Buscar todos os dados (vamos filtrar por data depois se necessário)
-    todas_receitas = await db.receitas.find().to_list(1000)
-    todas_despesas = await db.despesas.find().to_list(1000)
+    todas_receitas = await db.receitas.find({"user_id": usuario["id"]}).to_list(1000)
+    todas_despesas = await db.despesas.find({"user_id": usuario["id"]}).to_list(1000)
     
     # Aplicar filtros de data customizada
     if periodo == "ultimos_6_meses":
@@ -468,11 +469,11 @@ async def obter_dashboard(
     }
 
 @api_router.get("/gastos-recorrentes")
-async def obter_gastos_recorrentes():
+async def obter_gastos_recorrentes(usuario: dict = Depends(get_current_user)):
     """Retorna análise de gastos recorrentes e frequentes"""
     from collections import Counter
     
-    despesas = await db.despesas.find().to_list(1000)
+    despesas = await db.despesas.find({"user_id": usuario["id"]}).to_list(1000)
     
     if not despesas:
         return {
@@ -538,10 +539,10 @@ async def obter_gastos_recorrentes():
     }
 
 @api_router.get("/resumo-mensal", response_model=List[ResumoMensal])
-async def obter_resumo_mensal():
+async def obter_resumo_mensal(usuario: dict = Depends(get_current_user)):
     """Retorna resumo de todos os meses"""
-    receitas = await db.receitas.find().to_list(1000)
-    despesas = await db.despesas.find().to_list(1000)
+    receitas = await db.receitas.find({"user_id": usuario["id"]}).to_list(1000)
+    despesas = await db.despesas.find({"user_id": usuario["id"]}).to_list(1000)
     
     meses_anos = set()
     for r in receitas:
@@ -569,10 +570,10 @@ async def obter_resumo_mensal():
     return resumos
 
 @api_router.get("/projecoes")
-async def obter_projecoes():
+async def obter_projecoes(usuario: dict = Depends(get_current_user)):
     """Calcula projeções financeiras baseadas nas médias"""
-    receitas = await db.receitas.find().to_list(1000)
-    despesas = await db.despesas.find().to_list(1000)
+    receitas = await db.receitas.find({"user_id": usuario["id"]}).to_list(1000)
+    despesas = await db.despesas.find({"user_id": usuario["id"]}).to_list(1000)
     
     if not receitas and not despesas:
         return {
@@ -623,13 +624,13 @@ async def obter_projecoes():
 # ========== EXPORTAÇÃO EXCEL ==========
 
 @api_router.get("/export-excel")
-async def exportar_excel():
+async def exportar_excel(usuario: dict = Depends(get_current_user)):
     """Gera arquivo Excel com todas as abas e fórmulas"""
     
     # Buscar dados
-    receitas = await db.receitas.find().to_list(1000)
-    despesas = await db.despesas.find().to_list(1000)
-    categorias = await db.categorias.find().to_list(1000)
+    receitas = await db.receitas.find({"user_id": usuario["id"]}).to_list(1000)
+    despesas = await db.despesas.find({"user_id": usuario["id"]}).to_list(1000)
+    categorias = await db.categorias.find({"user_id": usuario["id"]}).to_list(1000)
     
     # Criar workbook
     wb = Workbook()
