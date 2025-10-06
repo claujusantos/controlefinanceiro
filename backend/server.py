@@ -236,40 +236,69 @@ async def deletar_despesa(desp_id: str):
 # ========== DASHBOARD & RESUMOS ==========
 
 @api_router.get("/dashboard")
-async def obter_dashboard(mes: Optional[int] = None, ano: Optional[int] = None):
-    """Retorna dados agregados para o dashboard"""
+async def obter_dashboard(
+    periodo: Optional[str] = None,  # "total", "ultimo_mes", "ultimos_6_meses", "customizado"
+    data_inicio: Optional[str] = None,  # formato: YYYY-MM-DD
+    data_fim: Optional[str] = None  # formato: YYYY-MM-DD
+):
+    """Retorna dados agregados para o dashboard com filtros de data"""
+    from datetime import datetime, timedelta
+    
+    # Determinar o filtro baseado no período
     filtro = {}
-    if mes:
-        filtro["mes"] = mes
-    if ano:
-        filtro["ano"] = ano
     
-    receitas = await db.receitas.find(filtro).to_list(1000)
-    despesas = await db.despesas.find(filtro).to_list(1000)
+    if periodo == "ultimo_mes":
+        # Último mês
+        hoje = datetime.now()
+        filtro["mes"] = hoje.month
+        filtro["ano"] = hoje.year
+    elif periodo == "ultimos_6_meses":
+        # Últimos 6 meses - vamos filtrar depois
+        pass
+    elif periodo == "customizado" and data_inicio and data_fim:
+        # Range customizado - vamos filtrar depois
+        pass
+    # Se periodo == "total" ou None, não filtra nada
     
-    total_receitas = sum(r.get("valor", 0) for r in receitas)
-    total_despesas = sum(d.get("valor", 0) for d in despesas)
+    # Buscar todos os dados (vamos filtrar por data depois se necessário)
+    todas_receitas = await db.receitas.find().to_list(1000)
+    todas_despesas = await db.despesas.find().to_list(1000)
+    
+    # Aplicar filtros de data customizada
+    if periodo == "ultimos_6_meses":
+        hoje = datetime.now()
+        data_limite = hoje - timedelta(days=180)
+        todas_receitas = [r for r in todas_receitas if datetime.strptime(r.get("data"), "%Y-%m-%d") >= data_limite]
+        todas_despesas = [d for d in todas_despesas if datetime.strptime(d.get("data"), "%Y-%m-%d") >= data_limite]
+    elif periodo == "customizado" and data_inicio and data_fim:
+        dt_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+        dt_fim = datetime.strptime(data_fim, "%Y-%m-%d")
+        todas_receitas = [r for r in todas_receitas if dt_inicio <= datetime.strptime(r.get("data"), "%Y-%m-%d") <= dt_fim]
+        todas_despesas = [d for d in todas_despesas if dt_inicio <= datetime.strptime(d.get("data"), "%Y-%m-%d") <= dt_fim]
+    elif periodo == "ultimo_mes":
+        todas_receitas = [r for r in todas_receitas if r.get("mes") == filtro.get("mes") and r.get("ano") == filtro.get("ano")]
+        todas_despesas = [d for d in todas_despesas if d.get("mes") == filtro.get("mes") and d.get("ano") == filtro.get("ano")]
+    
+    total_receitas = sum(r.get("valor", 0) for r in todas_receitas)
+    total_despesas = sum(d.get("valor", 0) for d in todas_despesas)
     saldo = total_receitas - total_despesas
     percentual_economia = (saldo / total_receitas * 100) if total_receitas > 0 else 0
     
     # Distribuição por categorias (despesas)
     categorias_dist = {}
-    for d in despesas:
+    for d in todas_despesas:
         cat = d.get("categoria", "Outros")
         categorias_dist[cat] = categorias_dist.get(cat, 0) + d.get("valor", 0)
     
-    # Evolução mensal (últimos 6 meses)
-    evolucao = []
-    todas_receitas = await db.receitas.find().to_list(1000)
-    todas_despesas = await db.despesas.find().to_list(1000)
-    
+    # Evolução mensal
     meses_anos = set()
     for r in todas_receitas:
         meses_anos.add((r.get("mes"), r.get("ano")))
     for d in todas_despesas:
         meses_anos.add((d.get("mes"), d.get("ano")))
     
-    for m, a in sorted(meses_anos)[-6:]:
+    evolucao = []
+    for m, a in sorted(meses_anos):
         recs = sum(r.get("valor", 0) for r in todas_receitas if r.get("mes") == m and r.get("ano") == a)
         desps = sum(d.get("valor", 0) for d in todas_despesas if d.get("mes") == m and d.get("ano") == a)
         evolucao.append({
