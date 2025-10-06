@@ -107,6 +107,11 @@ const AppRoutes = () => {
       {/* Rotas públicas */}
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
+      <Route path="/checkout" element={
+        <ProtectedRoute>
+          <Checkout />
+        </ProtectedRoute>
+      } />
       
       {/* Rotas protegidas */}
       <Route path="/" element={
