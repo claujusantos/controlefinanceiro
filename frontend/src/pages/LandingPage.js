@@ -18,7 +18,7 @@ import {
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [selectedPlan, setSelectedPlan] = useState('semestral');
 
   const plans = [
     {
