@@ -73,8 +73,8 @@ const LandingPage = () => {
 
   const handleSelectPlan = (planId) => {
     setSelectedPlan(planId);
-    // Aqui vamos integrar com Hotmart
-    console.log('Plano selecionado:', planId);
+    // Redirecionar para checkout
+    navigate(`/checkout?plano=${planId}`);
   };
 
   return (
