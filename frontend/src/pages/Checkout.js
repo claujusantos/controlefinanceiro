@@ -15,44 +15,52 @@ const Checkout = () => {
   const [planoSelecionado, setPlanoSelecionado] = useState(null);
 
   const plans = {
-    basico: {
-      nome: 'Básico',
-      preco: 19.90,
+    mensal: {
+      nome: 'Mensal',
+      preco: 24.90,
       periodo: 'mês',
       recursos: [
-        'Dashboard completo',
-        'Controle de receitas e despesas',
-        'Até 50 transações/mês',
-        'Exportação para Excel',
+        'Dashboard completo com gráficos',
+        'Controle ilimitado de receitas e despesas',
+        'Análise de gastos recorrentes',
+        'Projeções financeiras',
+        'Exportação profissional para Excel',
+        'Filtros avançados por período',
         'Suporte por email',
       ]
     },
-    pro: {
-      nome: 'Profissional',
-      preco: 39.90,
-      periodo: 'mês',
+    semestral: {
+      nome: 'Semestral',
+      preco: 119.40,
+      precoMensal: 19.90,
+      precoOriginal: 149.40,
+      periodo: '6 meses',
       recursos: [
-        'Tudo do plano Básico',
-        'Transações ilimitadas',
-        'Análise de gastos recorrentes',
-        'Projeções financeiras',
-        'Filtros avançados',
-        'Suporte prioritário',
-      ]
+        'Todos os recursos inclusos',
+        'R$ 19,90 por mês',
+        'Economia de R$ 30,00',
+        '20% de desconto',
+        'Pagamento único ou parcelado',
+        'Garantia de 7 dias',
+      ],
+      desconto: '20% OFF'
     },
     anual: {
       nome: 'Anual',
-      preco: 299,
-      precoOriginal: 478.80,
-      periodo: 'ano',
+      preco: 202.80,
+      precoMensal: 16.90,
+      precoOriginal: 298.80,
+      periodo: '12 meses',
       recursos: [
-        'Tudo do plano Profissional',
-        '12 meses pelo preço de 7,5',
-        'Economia de R$ 179,80',
-        'Garantia de 30 dias',
-        'Acesso vitalício às atualizações',
+        'Todos os recursos inclusos',
+        'R$ 16,90 por mês',
+        'Economia de R$ 96,00',
+        '32% de desconto',
+        'Melhor custo-benefício',
+        'Garantia de 7 dias',
+        'Bônus: Suporte prioritário',
       ],
-      desconto: '37% OFF'
+      desconto: '32% OFF'
     }
   };
 
