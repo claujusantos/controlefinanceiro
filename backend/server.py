@@ -339,8 +339,8 @@ async def deletar_receita(rec_id: str, usuario: dict = Depends(get_current_user)
 # ========== DESPESAS ENDPOINTS ==========
 
 @api_router.get("/despesas", response_model=List[Despesa])
-async def listar_despesas(mes: Optional[int] = None, ano: Optional[int] = None):
-    filtro = {}
+async def listar_despesas(mes: Optional[int] = None, ano: Optional[int] = None, usuario: dict = Depends(get_current_user)):
+    filtro = {"user_id": usuario["id"]}
     if mes:
         filtro["mes"] = mes
     if ano:
@@ -349,31 +349,33 @@ async def listar_despesas(mes: Optional[int] = None, ano: Optional[int] = None):
     return [Despesa(**desp) for desp in despesas]
 
 @api_router.post("/despesas", response_model=Despesa)
-async def criar_despesa(input: DespesaCreate):
+async def criar_despesa(input: DespesaCreate, usuario: dict = Depends(get_current_user)):
     desp_dict = input.dict()
     mes, ano = extrair_mes_ano(desp_dict["data"])
     desp_dict["mes"] = mes
     desp_dict["ano"] = ano
+    desp_dict["user_id"] = usuario["id"]
     desp_obj = Despesa(**desp_dict)
     await db.despesas.insert_one(desp_obj.dict())
     return desp_obj
 
 @api_router.put("/despesas/{desp_id}", response_model=Despesa)
-async def atualizar_despesa(desp_id: str, input: DespesaCreate):
+async def atualizar_despesa(desp_id: str, input: DespesaCreate, usuario: dict = Depends(get_current_user)):
     desp_dict = input.dict()
     mes, ano = extrair_mes_ano(desp_dict["data"])
     desp_dict["mes"] = mes
     desp_dict["ano"] = ano
     desp_dict["id"] = desp_id
+    desp_dict["user_id"] = usuario["id"]
     desp_obj = Despesa(**desp_dict)
-    result = await db.despesas.update_one({"id": desp_id}, {"$set": desp_obj.dict()})
+    result = await db.despesas.update_one({"id": desp_id, "user_id": usuario["id"]}, {"$set": desp_obj.dict()})
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
     return desp_obj
 
 @api_router.delete("/despesas/{desp_id}")
-async def deletar_despesa(desp_id: str):
-    result = await db.despesas.delete_one({"id": desp_id})
+async def deletar_despesa(desp_id: str, usuario: dict = Depends(get_current_user)):
+    result = await db.despesas.delete_one({"id": desp_id, "user_id": usuario["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
     return {"message": "Despesa deletada com sucesso"}
