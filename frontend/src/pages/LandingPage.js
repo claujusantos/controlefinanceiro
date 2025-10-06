@@ -322,7 +322,7 @@ const LandingPage = () => {
                 <div className="mb-6">
                   {plan.precoOriginal && (
                     <p className="text-gray-500 line-through text-lg">
-                      R$ {plan.precoOriginal.toFixed(2)}
+                      De R$ {plan.precoOriginal.toFixed(2).replace('.', ',')}
                     </p>
                   )}
                   <div className="flex items-baseline gap-2">
@@ -331,6 +331,11 @@ const LandingPage = () => {
                     </span>
                     <span className="text-gray-600">/{plan.periodo}</span>
                   </div>
+                  {plan.precoMensal && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      Equivalente a <strong>R$ {plan.precoMensal.toFixed(2).replace('.', ',')}/mês</strong>
+                    </p>
+                  )}
                 </div>
 
                 <ul className="space-y-3 mb-8">
