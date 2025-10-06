@@ -75,16 +75,32 @@ const Projecoes = () => {
       </div>
 
       {/* Alerta */}
-      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-blue-800">
-              As projeções são estimativas baseadas no histórico recente e podem variar de acordo com seus hábitos financeiros.
-            </p>
+      {semDados ? (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800 mb-2">
+                Você ainda não tem dados suficientes para gerar projeções.
+              </p>
+              <p className="text-sm text-yellow-700">
+                Adicione algumas receitas e despesas nas abas correspondentes para visualizar tendências financeiras e projeções futuras.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-800">
+                As projeções são estimativas baseadas no histórico recente e podem variar de acordo com seus hábitos financeiros.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cards de Médias */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
