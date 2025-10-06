@@ -96,8 +96,13 @@ const Layout = ({ children }) => {
 };
 
 const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
+  
   return (
     <Routes>
+      {/* Landing Page - Rota pública inicial */}
+      <Route path="/landing" element={<LandingPage />} />
+      
       {/* Rotas públicas */}
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
