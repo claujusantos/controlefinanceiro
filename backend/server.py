@@ -319,6 +319,76 @@ async def obter_dashboard(
         "evolucao_mensal": evolucao
     }
 
+@api_router.get("/gastos-recorrentes")
+async def obter_gastos_recorrentes():
+    """Retorna análise de gastos recorrentes e frequentes"""
+    from collections import Counter
+    
+    despesas = await db.despesas.find().to_list(1000)
+    
+    if not despesas:
+        return {
+            "categorias_mais_frequentes": [],
+            "descricoes_recorrentes": [],
+            "media_por_categoria": []
+        }
+    
+    # Contar frequência por categoria
+    categorias_count = Counter(d.get("categoria") for d in despesas)
+    categorias_valores = {}
+    categorias_ocorrencias = {}
+    
+    for d in despesas:
+        cat = d.get("categoria", "Outros")
+        if cat not in categorias_valores:
+            categorias_valores[cat] = 0
+            categorias_ocorrencias[cat] = 0
+        categorias_valores[cat] += d.get("valor", 0)
+        categorias_ocorrencias[cat] += 1
+    
+    # Categorias mais frequentes com valores
+    categorias_freq = []
+    for cat, count in categorias_count.most_common():
+        categorias_freq.append({
+            "categoria": cat,
+            "ocorrencias": count,
+            "valor_total": categorias_valores[cat],
+            "valor_medio": categorias_valores[cat] / count if count > 0 else 0
+        })
+    
+    # Descrições que se repetem (gastos recorrentes)
+    descricoes_count = Counter(d.get("descricao").lower() for d in despesas)
+    descricoes_recorrentes = []
+    
+    for desc, count in descricoes_count.most_common(10):
+        if count > 1:  # Apenas descrições que aparecem mais de uma vez
+            valor_total = sum(d.get("valor", 0) for d in despesas if d.get("descricao").lower() == desc)
+            descricoes_recorrentes.append({
+                "descricao": desc.title(),
+                "ocorrencias": count,
+                "valor_total": valor_total,
+                "valor_medio": valor_total / count
+            })
+    
+    # Média de gasto por categoria
+    media_por_cat = []
+    for cat, total in categorias_valores.items():
+        count = categorias_ocorrencias[cat]
+        media_por_cat.append({
+            "categoria": cat,
+            "media_gasto": total / count if count > 0 else 0,
+            "total_gasto": total
+        })
+    
+    # Ordenar por total gasto
+    media_por_cat.sort(key=lambda x: x["total_gasto"], reverse=True)
+    
+    return {
+        "categorias_mais_frequentes": categorias_freq[:10],
+        "descricoes_recorrentes": descricoes_recorrentes,
+        "media_por_categoria": media_por_cat
+    }
+
 @api_router.get("/resumo-mensal", response_model=List[ResumoMensal])
 async def obter_resumo_mensal():
     """Retorna resumo de todos os meses"""
