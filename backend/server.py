@@ -34,8 +34,35 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Security
+security = HTTPBearer()
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'sua-chave-secreta-super-segura-mude-em-producao')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 dias
+
 
 # ========== MODELS ==========
+
+class Usuario(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    email: EmailStr
+    senha_hash: str
+    data_criacao: datetime = Field(default_factory=datetime.utcnow)
+
+class UsuarioCreate(BaseModel):
+    nome: str
+    email: EmailStr
+    senha: str
+
+class UsuarioLogin(BaseModel):
+    email: EmailStr
+    senha: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    usuario: dict
 
 class Categoria(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
