@@ -294,8 +294,8 @@ async def deletar_categoria(cat_id: str, usuario: dict = Depends(get_current_use
 # ========== RECEITAS ENDPOINTS ==========
 
 @api_router.get("/receitas", response_model=List[Receita])
-async def listar_receitas(mes: Optional[int] = None, ano: Optional[int] = None):
-    filtro = {}
+async def listar_receitas(mes: Optional[int] = None, ano: Optional[int] = None, usuario: dict = Depends(get_current_user)):
+    filtro = {"user_id": usuario["id"]}
     if mes:
         filtro["mes"] = mes
     if ano:
@@ -304,31 +304,33 @@ async def listar_receitas(mes: Optional[int] = None, ano: Optional[int] = None):
     return [Receita(**rec) for rec in receitas]
 
 @api_router.post("/receitas", response_model=Receita)
-async def criar_receita(input: ReceitaCreate):
+async def criar_receita(input: ReceitaCreate, usuario: dict = Depends(get_current_user)):
     rec_dict = input.dict()
     mes, ano = extrair_mes_ano(rec_dict["data"])
     rec_dict["mes"] = mes
     rec_dict["ano"] = ano
+    rec_dict["user_id"] = usuario["id"]
     rec_obj = Receita(**rec_dict)
     await db.receitas.insert_one(rec_obj.dict())
     return rec_obj
 
 @api_router.put("/receitas/{rec_id}", response_model=Receita)
-async def atualizar_receita(rec_id: str, input: ReceitaCreate):
+async def atualizar_receita(rec_id: str, input: ReceitaCreate, usuario: dict = Depends(get_current_user)):
     rec_dict = input.dict()
     mes, ano = extrair_mes_ano(rec_dict["data"])
     rec_dict["mes"] = mes
     rec_dict["ano"] = ano
     rec_dict["id"] = rec_id
+    rec_dict["user_id"] = usuario["id"]
     rec_obj = Receita(**rec_dict)
-    result = await db.receitas.update_one({"id": rec_id}, {"$set": rec_obj.dict()})
+    result = await db.receitas.update_one({"id": rec_id, "user_id": usuario["id"]}, {"$set": rec_obj.dict()})
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Receita não encontrada")
     return rec_obj
 
 @api_router.delete("/receitas/{rec_id}")
-async def deletar_receita(rec_id: str):
-    result = await db.receitas.delete_one({"id": rec_id})
+async def deletar_receita(rec_id: str, usuario: dict = Depends(get_current_user)):
+    result = await db.receitas.delete_one({"id": rec_id, "user_id": usuario["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Receita não encontrada")
     return {"message": "Receita deletada com sucesso"}
