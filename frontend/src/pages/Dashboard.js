@@ -300,7 +300,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
+          
           {/* Média por Categoria */}
           <div className="mt-6">
             <h4 className="text-md font-semibold text-gray-700 mb-3">Média de Gasto por Categoria</h4>
