@@ -265,7 +265,144 @@ async def obter_usuario_atual(usuario: dict = Depends(get_current_user)):
     return {
         "id": usuario["id"],
         "nome": usuario["nome"],
-        "email": usuario["email"]
+        "email": usuario["email"],
+        "plano": usuario.get("plano", "trial"),
+        "status_assinatura": usuario.get("status_assinatura", "active"),
+        "data_expiracao": usuario.get("data_expiracao")
+    }
+
+
+# ========== ASSINATURAS & HOTMART ==========
+
+@api_router.post("/webhook/hotmart")
+async def webhook_hotmart(request: dict):
+    """
+    Recebe notificações da Hotmart
+    
+    Eventos importantes:
+    - PURCHASE_COMPLETE: Compra aprovada
+    - PURCHASE_CANCELED: Compra cancelada
+    - PURCHASE_REFUNDED: Compra reembolsada
+    - SUBSCRIPTION_CANCELLATION: Assinatura cancelada
+    """
+    try:
+        event = request.get("event")
+        data = request.get("data", {})
+        
+        buyer_email = data.get("buyer", {}).get("email")
+        transaction_code = data.get("purchase", {}).get("transaction")
+        subscriber_code = data.get("subscription", {}).get("subscriber_code")
+        product_id = data.get("product", {}).get("id")
+        
+        # Identificar o plano baseado no product_id da Hotmart
+        plano_map = {
+            # Você vai preencher com os IDs reais dos seus produtos na Hotmart
+            "PRODUCT_ID_BASICO": "basico",
+            "PRODUCT_ID_PRO": "pro",
+            "PRODUCT_ID_ANUAL": "anual"
+        }
+        
+        plano = plano_map.get(str(product_id), "pro")
+        
+        # Buscar usuário pelo email
+        usuario = await db.usuarios.find_one({"email": buyer_email})
+        
+        if event == "PURCHASE_COMPLETE":
+            # Compra aprovada - ativar assinatura
+            if usuario:
+                # Calcular data de expiração
+                if plano == "anual":
+                    data_expiracao = datetime.utcnow() + timedelta(days=365)
+                else:
+                    data_expiracao = datetime.utcnow() + timedelta(days=30)
+                
+                # Atualizar usuário
+                await db.usuarios.update_one(
+                    {"email": buyer_email},
+                    {"$set": {
+                        "plano": plano,
+                        "status_assinatura": "active",
+                        "data_expiracao": data_expiracao,
+                        "hotmart_subscriber_code": subscriber_code
+                    }}
+                )
+                
+                # Criar registro de assinatura
+                assinatura = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": usuario["id"],
+                    "plano": plano,
+                    "status": "active",
+                    "data_inicio": datetime.utcnow(),
+                    "data_fim": data_expiracao,
+                    "valor": data.get("purchase", {}).get("price", {}).get("value", 0),
+                    "hotmart_transaction": transaction_code,
+                    "hotmart_subscriber_code": subscriber_code
+                }
+                await db.assinaturas.insert_one(assinatura)
+        
+        elif event in ["PURCHASE_CANCELED", "PURCHASE_REFUNDED", "SUBSCRIPTION_CANCELLATION"]:
+            # Cancelar assinatura
+            if usuario:
+                await db.usuarios.update_one(
+                    {"email": buyer_email},
+                    {"$set": {
+                        "status_assinatura": "canceled",
+                        "plano": "trial"
+                    }}
+                )
+                
+                await db.assinaturas.update_many(
+                    {"user_id": usuario["id"], "status": "active"},
+                    {"$set": {"status": "canceled"}}
+                )
+        
+        return {"status": "success", "message": "Webhook processed"}
+    
+    except Exception as e:
+        logging.error(f"Erro no webhook Hotmart: {e}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.get("/assinatura/status")
+async def obter_status_assinatura(usuario: dict = Depends(get_current_user)):
+    """Retorna o status da assinatura do usuário"""
+    assinatura = await db.assinaturas.find_one(
+        {"user_id": usuario["id"], "status": "active"},
+        sort=[("data_inicio", -1)]
+    )
+    
+    return {
+        "plano": usuario.get("plano", "trial"),
+        "status": usuario.get("status_assinatura", "active"),
+        "data_expiracao": usuario.get("data_expiracao"),
+        "assinatura": assinatura if assinatura else None
+    }
+
+@api_router.post("/checkout/hotmart")
+async def criar_checkout_hotmart(plano: str, usuario: dict = Depends(get_current_user)):
+    """
+    Gera link de checkout da Hotmart
+    
+    IMPORTANTE: Você precisa configurar os links dos seus produtos na Hotmart
+    """
+    # Links de checkout da Hotmart (você vai substituir pelos seus)
+    checkout_links = {
+        "basico": "https://pay.hotmart.com/SEU_PRODUTO_BASICO",
+        "pro": "https://pay.hotmart.com/SEU_PRODUTO_PRO",
+        "anual": "https://pay.hotmart.com/SEU_PRODUTO_ANUAL"
+    }
+    
+    link = checkout_links.get(plano)
+    
+    if not link:
+        raise HTTPException(status_code=400, detail="Plano inválido")
+    
+    # Adicionar email do usuário ao link (se a Hotmart suportar)
+    link_com_email = f"{link}?email={usuario['email']}"
+    
+    return {
+        "checkout_url": link_com_email,
+        "plano": plano
     }
 
 
