@@ -41,6 +41,9 @@ const Projecoes = () => {
     );
   }
 
+  // Verificar se há dados suficientes
+  const semDados = projecoes.media_receitas === 0 && projecoes.media_despesas === 0;
+
   const getTendenciaIcon = () => {
     if (projecoes.tendencia === 'crescimento') {
       return <TrendingUp className="w-8 h-8 text-green-500" />;
