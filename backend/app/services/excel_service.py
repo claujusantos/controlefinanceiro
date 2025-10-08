@@ -106,3 +106,127 @@ class ExcelService:
                 ws_tutorial[f'A{i}'].font = Font(bold=True, size=11)
         
         ws_tutorial.column_dimensions['A'].width = 80
+    
+    def _create_categorias_sheet(self, wb, categorias, header_fill, header_font, titulo_font, border):
+        """Cria a aba Categorias"""
+        ws_cat = wb.create_sheet("Categorias")
+        
+        ws_cat['A1'] = "📁 CATEGORIAS"
+        ws_cat['A1'].font = titulo_font
+        ws_cat.merge_cells('A1:C1')
+        
+        headers_cat = ['Nome', 'Tipo', 'Cor']
+        for col, header in enumerate(headers_cat, start=1):
+            cell = ws_cat.cell(row=3, column=col)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center')
+        
+        for i, cat in enumerate(categorias, start=4):
+            ws_cat[f'A{i}'] = cat.get('nome', '')
+            ws_cat[f'B{i}'] = cat.get('tipo', '')
+            ws_cat[f'C{i}'] = cat.get('cor', '')
+            
+            for col in range(1, 4):
+                ws_cat.cell(row=i, column=col).border = border
+        
+        ws_cat.column_dimensions['A'].width = 25
+        ws_cat.column_dimensions['B'].width = 15
+        ws_cat.column_dimensions['C'].width = 15
+    
+    def _create_receitas_sheet(self, wb, receitas, header_fill, header_font, titulo_font, border):
+        """Cria a aba Receitas"""
+        ws_rec = wb.create_sheet("Receitas")
+        
+        ws_rec['A1'] = "💰 RECEITAS"
+        ws_rec['A1'].font = titulo_font
+        ws_rec.merge_cells('A1:E1')
+        
+        headers_rec = ['Data', 'Descrição', 'Categoria', 'Forma Recebimento', 'Valor']
+        for col, header in enumerate(headers_rec, start=1):
+            cell = ws_rec.cell(row=3, column=col)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center')
+        
+        for i, rec in enumerate(receitas, start=4):
+            ws_rec[f'A{i}'] = rec.get('data', '')
+            ws_rec[f'B{i}'] = rec.get('descricao', '')
+            ws_rec[f'C{i}'] = rec.get('categoria', '')
+            ws_rec[f'D{i}'] = rec.get('forma_recebimento', '')
+            ws_rec[f'E{i}'] = rec.get('valor', 0)
+            
+            for col in range(1, 6):
+                ws_rec.cell(row=i, column=col).border = border
+        
+        # Total
+        ultima_linha = len(receitas) + 4
+        ws_rec[f'D{ultima_linha}'] = "TOTAL:"
+        ws_rec[f'D{ultima_linha}'].font = Font(bold=True)
+        ws_rec[f'E{ultima_linha}'] = f"=SUM(E4:E{ultima_linha-1})"
+        ws_rec[f'E{ultima_linha}'].font = Font(bold=True)
+        ws_rec[f'E{ultima_linha}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        
+        ws_rec.column_dimensions['A'].width = 15
+        ws_rec.column_dimensions['B'].width = 30
+        ws_rec.column_dimensions['C'].width = 20
+        ws_rec.column_dimensions['D'].width = 20
+        ws_rec.column_dimensions['E'].width = 15
+    
+    def _create_despesas_sheet(self, wb, despesas, categorias, header_fill, header_font, titulo_font, border):
+        """Cria a aba Despesas - simplified version for now"""
+        ws_desp = wb.create_sheet("Despesas")
+        
+        ws_desp['A1'] = "💸 DESPESAS"
+        ws_desp['A1'].font = titulo_font
+        ws_desp.merge_cells('A1:E1')
+        
+        headers_desp = ['Data', 'Descrição', 'Categoria', 'Forma Pagamento', 'Valor']
+        for col, header in enumerate(headers_desp, start=1):
+            cell = ws_desp.cell(row=3, column=col)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center')
+        
+        for i, desp in enumerate(despesas, start=4):
+            ws_desp[f'A{i}'] = desp.get('data', '')
+            ws_desp[f'B{i}'] = desp.get('descricao', '')
+            ws_desp[f'C{i}'] = desp.get('categoria', '')
+            ws_desp[f'D{i}'] = desp.get('forma_pagamento', '')
+            ws_desp[f'E{i}'] = desp.get('valor', 0)
+            
+            for col in range(1, 6):
+                ws_desp.cell(row=i, column=col).border = border
+        
+        ws_desp.column_dimensions['A'].width = 15
+        ws_desp.column_dimensions['B'].width = 30
+        ws_desp.column_dimensions['C'].width = 20
+        ws_desp.column_dimensions['D'].width = 20
+        ws_desp.column_dimensions['E'].width = 15
+    
+    def _create_resumo_sheet(self, wb, header_fill, header_font, titulo_font, border):
+        """Cria a aba Resumo Mensal - simplified version"""
+        ws_resumo = wb.create_sheet("Resumo Mensal")
+        ws_resumo['A1'] = "📊 RESUMO MENSAL"
+        ws_resumo['A1'].font = titulo_font
+        ws_resumo.merge_cells('A1:F1')
+    
+    def _create_projecoes_sheet(self, wb, header_fill, header_font, titulo_font, border):
+        """Cria a aba Projeções - simplified version"""
+        ws_proj = wb.create_sheet("Projeções")
+        ws_proj['A1'] = "🔮 PROJEÇÕES FINANCEIRAS"
+        ws_proj['A1'].font = titulo_font
+        ws_proj.merge_cells('A1:E1')
+    
+    def _create_dashboard_sheet(self, wb, header_fill, header_font, titulo_font, border):
+        """Cria a aba Dashboard - simplified version"""
+        ws_dash = wb.create_sheet("Painel")
+        ws_dash['A1'] = "📈 PAINEL DE CONTROLE"
+        ws_dash['A1'].font = titulo_font
+        ws_dash.merge_cells('A1:F1')
