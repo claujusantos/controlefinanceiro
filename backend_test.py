@@ -100,7 +100,7 @@ class FinancialAPITester:
         try:
             login_data = {
                 "email": self.user_data["email"],
-                "senha": "senha123456"
+                "senha": "MinhaSenh@123"
             }
             
             response = self.session.post(f"{self.base_url}/auth/login", json=login_data)
