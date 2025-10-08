@@ -20,18 +20,51 @@ const Registro = () => {
   const [emailErro, setEmailErro] = useState('');
   const [senhaErros, setSenhaErros] = useState([]);
 
+  // Validações em tempo real
+  const handleNomeChange = (value) => {
+    setNome(value);
+    const validation = NameValidator.validateName(value);
+    setNomeErro(validation.isValid ? '' : validation.error);
+  };
+
+  const handleEmailChange = (value) => {
+    setEmail(value);
+    const validation = EmailValidator.validateEmail(value);
+    setEmailErro(validation.isValid ? '' : validation.error);
+  };
+
+  const handleSenhaChange = (value) => {
+    setSenha(value);
+    const validation = PasswordValidator.validatePassword(value);
+    setSenhaErros(validation.errors);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro('');
 
-    // Validações
-    if (senha !== confirmarSenha) {
-      setErro('As senhas não coincidem');
+    // Validações finais
+    const nomeValidation = NameValidator.validateName(nome);
+    const emailValidation = EmailValidator.validateEmail(email);
+    const senhaValidation = PasswordValidator.validatePassword(senha);
+
+    if (!nomeValidation.isValid) {
+      setErro(nomeValidation.error);
       return;
     }
 
-    if (senha.length < 6) {
-      setErro('A senha deve ter pelo menos 6 caracteres');
+    if (!emailValidation.isValid) {
+      setErro(emailValidation.error);
+      return;
+    }
+
+    if (!senhaValidation.isValid) {
+      setErro(`Senha inválida: ${senhaValidation.errors.join(', ')}`);
+      return;
+    }
+
+    if (senha !== confirmarSenha) {
+      setErro('As senhas não coincidem');
       return;
     }
 
