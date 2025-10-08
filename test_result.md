@@ -180,7 +180,7 @@
 
 ## test_plan:
   current_focus:
-    - "Dockerization Setup"
+    - "Password Validation System"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
