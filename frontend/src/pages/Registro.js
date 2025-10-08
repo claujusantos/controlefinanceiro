@@ -186,7 +186,6 @@ const Registro = () => {
                   ))}
                 </div>
               )}
-              </div>
             </div>
 
             <div>
