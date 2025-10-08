@@ -151,7 +151,6 @@ const Registro = () => {
               {emailErro && (
                 <p className="mt-1 text-sm text-red-600">{emailErro}</p>
               )}
-              </div>
             </div>
 
             <div>
