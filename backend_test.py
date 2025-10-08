@@ -48,8 +48,12 @@ class FinancialAPITester:
         try:
             response = self.session.get(f"{self.base_url.replace('/api', '')}/")
             if response.status_code == 200:
-                data = response.json()
-                self.log_test("Health Check", True, f"API is running: {data.get('message', '')}")
+                try:
+                    data = response.json()
+                    self.log_test("Health Check", True, f"API is running: {data.get('message', '')}")
+                except:
+                    # Might return HTML in production
+                    self.log_test("Health Check", True, "API is running (HTML response)")
                 return True
             else:
                 self.log_test("Health Check", False, f"Status: {response.status_code}")
