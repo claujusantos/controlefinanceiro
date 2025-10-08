@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
 from typing import Optional
 from datetime import datetime
 import uuid
+from app.core.validators import PasswordValidator, validate_name
 
 
 class Usuario(BaseModel):
