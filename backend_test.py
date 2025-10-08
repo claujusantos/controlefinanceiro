@@ -492,6 +492,344 @@ class FinancialAPITester:
             self.log_test("Hotmart Webhook", False, f"Error: {str(e)}")
             return False
     
+    def test_password_validation_security(self):
+        """Test comprehensive password validation and security"""
+        try:
+            # Test weak passwords
+            weak_passwords = [
+                "123",  # Too short
+                "password",  # No uppercase, no special chars
+                "PASSWORD",  # No lowercase, no special chars
+                "Pass123",  # No special chars
+                "Pass@",  # Too short
+                "Pass 123@",  # Contains spaces
+            ]
+            
+            for weak_pass in weak_passwords:
+                response = self.session.post(f"{self.base_url}/auth/validar-senha", 
+                                           json={"senha": weak_pass})
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("is_valid"):
+                        self.log_test("Password Validation - Weak Password", False, 
+                                    f"Weak password '{weak_pass}' was incorrectly validated as strong")
+                        return False
+            
+            # Test strong password
+            strong_password = "MinhaSenh@123"
+            response = self.session.post(f"{self.base_url}/auth/validar-senha", 
+                                       json={"senha": strong_password})
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get("is_valid"):
+                    self.log_test("Password Validation - Strong Password", False, 
+                                f"Strong password was incorrectly rejected: {data.get('errors')}")
+                    return False
+                
+                # Verify all criteria are met
+                criteria = data.get("criteria", {})
+                expected_criteria = ["min_length", "has_uppercase", "has_lowercase", "has_special", "no_spaces"]
+                for criterion in expected_criteria:
+                    if not criteria.get(criterion):
+                        self.log_test("Password Validation - Criteria", False, 
+                                    f"Criterion '{criterion}' failed for strong password")
+                        return False
+            
+            self.log_test("Password Validation Security", True, 
+                        "All password validation security tests passed")
+            return True
+            
+        except Exception as e:
+            self.log_test("Password Validation Security", False, f"Error: {str(e)}")
+            return False
+    
+    def test_jwt_security(self):
+        """Test JWT token security and validation"""
+        try:
+            # Test accessing protected endpoint without token
+            session_no_auth = requests.Session()
+            response = session_no_auth.get(f"{self.base_url}/auth/me")
+            if response.status_code != 401:
+                self.log_test("JWT Security - No Token", False, 
+                            f"Expected 401, got {response.status_code}")
+                return False
+            
+            # Test accessing protected endpoint with invalid token
+            session_invalid = requests.Session()
+            session_invalid.headers.update({"Authorization": "Bearer invalid_token_here"})
+            response = session_invalid.get(f"{self.base_url}/auth/me")
+            if response.status_code != 401:
+                self.log_test("JWT Security - Invalid Token", False, 
+                            f"Expected 401, got {response.status_code}")
+                return False
+            
+            # Test accessing protected endpoint with malformed token
+            session_malformed = requests.Session()
+            session_malformed.headers.update({"Authorization": "Bearer"})
+            response = session_malformed.get(f"{self.base_url}/auth/me")
+            if response.status_code not in [401, 422]:
+                self.log_test("JWT Security - Malformed Token", False, 
+                            f"Expected 401/422, got {response.status_code}")
+                return False
+            
+            self.log_test("JWT Security", True, "All JWT security tests passed")
+            return True
+            
+        except Exception as e:
+            self.log_test("JWT Security", False, f"Error: {str(e)}")
+            return False
+    
+    def test_public_endpoints_security(self):
+        """Test that public endpoints are accessible without authentication"""
+        try:
+            session_no_auth = requests.Session()
+            
+            # Test public endpoints that should work without token
+            public_endpoints = [
+                ("GET", f"{self.base_url.replace('/api', '')}/", "Health Check"),
+                ("POST", f"{self.base_url}/auth/validar-senha", "Password Validation", {"senha": "test123"}),
+                ("POST", f"{self.base_url}/webhook/hotmart", "Hotmart Webhook", {"event": "TEST"})
+            ]
+            
+            for method, url, name, *data in public_endpoints:
+                if method == "GET":
+                    response = session_no_auth.get(url)
+                else:
+                    payload = data[0] if data else {}
+                    response = session_no_auth.post(url, json=payload)
+                
+                # These should not return 401/403 (authentication errors)
+                if response.status_code in [401, 403]:
+                    self.log_test(f"Public Endpoint - {name}", False, 
+                                f"Public endpoint returned {response.status_code}")
+                    return False
+            
+            self.log_test("Public Endpoints Security", True, 
+                        "All public endpoints accessible without authentication")
+            return True
+            
+        except Exception as e:
+            self.log_test("Public Endpoints Security", False, f"Error: {str(e)}")
+            return False
+    
+    def test_protected_endpoints_security(self):
+        """Test that protected endpoints require authentication"""
+        if not self.auth_token:
+            self.log_test("Protected Endpoints Security", False, "No auth token available")
+            return False
+        
+        try:
+            session_no_auth = requests.Session()
+            
+            # Test protected endpoints that should require token
+            protected_endpoints = [
+                ("GET", f"{self.base_url}/auth/me", "Get Current User"),
+                ("GET", f"{self.base_url}/categorias", "List Categories"),
+                ("GET", f"{self.base_url}/receitas", "List Receitas"),
+                ("GET", f"{self.base_url}/despesas", "List Despesas"),
+                ("GET", f"{self.base_url}/dashboard", "Dashboard"),
+                ("GET", f"{self.base_url}/gastos-recorrentes", "Gastos Recorrentes"),
+                ("GET", f"{self.base_url}/resumo-mensal", "Resumo Mensal"),
+                ("GET", f"{self.base_url}/projecoes", "Projeções"),
+                ("GET", f"{self.base_url}/export-excel", "Excel Export"),
+            ]
+            
+            for method, url, name in protected_endpoints:
+                response = session_no_auth.get(url)
+                
+                # These should return 401/403 (authentication required)
+                if response.status_code not in [401, 403]:
+                    self.log_test(f"Protected Endpoint - {name}", False, 
+                                f"Protected endpoint returned {response.status_code} instead of 401/403")
+                    return False
+            
+            self.log_test("Protected Endpoints Security", True, 
+                        "All protected endpoints require authentication")
+            return True
+            
+        except Exception as e:
+            self.log_test("Protected Endpoints Security", False, f"Error: {str(e)}")
+            return False
+    
+    def test_multi_tenant_isolation(self):
+        """Test that users can only access their own data"""
+        try:
+            # Create two test users
+            user1_email = f"user1_{uuid.uuid4().hex[:8]}@example.com"
+            user2_email = f"user2_{uuid.uuid4().hex[:8]}@example.com"
+            
+            # Register user 1
+            user1_data = {
+                "nome": "João Silva",
+                "email": user1_email,
+                "senha": "MinhaSenh@123"
+            }
+            response1 = self.session.post(f"{self.base_url}/auth/registro", json=user1_data)
+            if response1.status_code != 201:
+                self.log_test("Multi-tenant - User1 Registration", False, 
+                            f"Failed to register user1: {response1.status_code}")
+                return False
+            
+            user1_token = response1.json().get("access_token")
+            user1_id = response1.json().get("usuario", {}).get("id")
+            
+            # Register user 2
+            user2_data = {
+                "nome": "Maria Santos",
+                "email": user2_email,
+                "senha": "OutraSenh@456"
+            }
+            response2 = self.session.post(f"{self.base_url}/auth/registro", json=user2_data)
+            if response2.status_code != 201:
+                self.log_test("Multi-tenant - User2 Registration", False, 
+                            f"Failed to register user2: {response2.status_code}")
+                return False
+            
+            user2_token = response2.json().get("access_token")
+            user2_id = response2.json().get("usuario", {}).get("id")
+            
+            # Create sessions for each user
+            session1 = requests.Session()
+            session1.headers.update({"Authorization": f"Bearer {user1_token}"})
+            
+            session2 = requests.Session()
+            session2.headers.update({"Authorization": f"Bearer {user2_token}"})
+            
+            # User 1 creates a receita
+            receita_data = {
+                "data": "2024-01-15",
+                "descricao": "Salário User1",
+                "categoria": "Salário",
+                "forma_recebimento": "PIX",
+                "valor": 5000.00
+            }
+            response = session1.post(f"{self.base_url}/receitas", json=receita_data)
+            if response.status_code != 200:
+                self.log_test("Multi-tenant - Create Receita User1", False, 
+                            f"Failed to create receita for user1: {response.status_code}")
+                return False
+            
+            # User 2 creates a receita
+            receita_data2 = {
+                "data": "2024-01-15",
+                "descricao": "Salário User2",
+                "categoria": "Salário",
+                "forma_recebimento": "PIX",
+                "valor": 3000.00
+            }
+            response = session2.post(f"{self.base_url}/receitas", json=receita_data2)
+            if response.status_code != 200:
+                self.log_test("Multi-tenant - Create Receita User2", False, 
+                            f"Failed to create receita for user2: {response.status_code}")
+                return False
+            
+            # User 1 should only see their own receitas
+            response1_receitas = session1.get(f"{self.base_url}/receitas")
+            if response1_receitas.status_code != 200:
+                self.log_test("Multi-tenant - User1 List Receitas", False, 
+                            f"Failed to list receitas for user1: {response1_receitas.status_code}")
+                return False
+            
+            user1_receitas = response1_receitas.json()
+            for receita in user1_receitas:
+                if receita.get("descricao") == "Salário User2":
+                    self.log_test("Multi-tenant - Data Isolation", False, 
+                                "User1 can see User2's receita - data isolation failed")
+                    return False
+            
+            # User 2 should only see their own receitas
+            response2_receitas = session2.get(f"{self.base_url}/receitas")
+            if response2_receitas.status_code != 200:
+                self.log_test("Multi-tenant - User2 List Receitas", False, 
+                            f"Failed to list receitas for user2: {response2_receitas.status_code}")
+                return False
+            
+            user2_receitas = response2_receitas.json()
+            for receita in user2_receitas:
+                if receita.get("descricao") == "Salário User1":
+                    self.log_test("Multi-tenant - Data Isolation", False, 
+                                "User2 can see User1's receita - data isolation failed")
+                    return False
+            
+            # Test dashboard isolation
+            dashboard1 = session1.get(f"{self.base_url}/dashboard")
+            dashboard2 = session2.get(f"{self.base_url}/dashboard")
+            
+            if dashboard1.status_code == 200 and dashboard2.status_code == 200:
+                dash1_data = dashboard1.json()
+                dash2_data = dashboard2.json()
+                
+                # Dashboards should have different values
+                if dash1_data.get("total_receitas") == dash2_data.get("total_receitas"):
+                    if dash1_data.get("total_receitas") != 0:  # Only fail if both have same non-zero values
+                        self.log_test("Multi-tenant - Dashboard Isolation", False, 
+                                    "Users have identical dashboard data - possible data leakage")
+                        return False
+            
+            self.log_test("Multi-tenant Isolation", True, 
+                        "Multi-tenant data isolation working correctly")
+            return True
+            
+        except Exception as e:
+            self.log_test("Multi-tenant Isolation", False, f"Error: {str(e)}")
+            return False
+    
+    def test_comprehensive_validations(self):
+        """Test all data validations"""
+        if not self.auth_token:
+            self.log_test("Comprehensive Validations", False, "No auth token available")
+            return False
+        
+        try:
+            # Test invalid receita data
+            invalid_receitas = [
+                {"data": "invalid-date", "descricao": "Test", "categoria": "Salário", "forma_recebimento": "PIX", "valor": 1000},
+                {"data": "2024-01-15", "descricao": "", "categoria": "Salário", "forma_recebimento": "PIX", "valor": 1000},
+                {"data": "2024-01-15", "descricao": "Test", "categoria": "Salário", "forma_recebimento": "PIX", "valor": -1000},
+            ]
+            
+            for invalid_data in invalid_receitas:
+                response = self.session.post(f"{self.base_url}/receitas", json=invalid_data)
+                if response.status_code == 200:
+                    self.log_test("Validation - Invalid Receita", False, 
+                                f"Invalid receita data was accepted: {invalid_data}")
+                    return False
+            
+            # Test invalid despesa data
+            invalid_despesas = [
+                {"data": "2024-01-15", "descricao": "Test", "categoria": "Alimentação", "forma_pagamento": "PIX", "valor": -500},
+                {"data": "2024-01-15", "descricao": "", "categoria": "Alimentação", "forma_pagamento": "PIX", "valor": 500},
+            ]
+            
+            for invalid_data in invalid_despesas:
+                response = self.session.post(f"{self.base_url}/despesas", json=invalid_data)
+                if response.status_code == 200:
+                    self.log_test("Validation - Invalid Despesa", False, 
+                                f"Invalid despesa data was accepted: {invalid_data}")
+                    return False
+            
+            # Test invalid categoria data
+            invalid_categorias = [
+                {"nome": "", "tipo": "despesa", "cor": "#FF0000"},
+                {"nome": "Test", "tipo": "invalid_type", "cor": "#FF0000"},
+                {"nome": "Test", "tipo": "despesa", "cor": "invalid_color"},
+            ]
+            
+            for invalid_data in invalid_categorias:
+                response = self.session.post(f"{self.base_url}/categorias", json=invalid_data)
+                if response.status_code == 200:
+                    self.log_test("Validation - Invalid Categoria", False, 
+                                f"Invalid categoria data was accepted: {invalid_data}")
+                    return False
+            
+            self.log_test("Comprehensive Validations", True, 
+                        "All data validations working correctly")
+            return True
+            
+        except Exception as e:
+            self.log_test("Comprehensive Validations", False, f"Error: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Financial Control Backend API Tests")
