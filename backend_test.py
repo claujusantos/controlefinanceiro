@@ -22,6 +22,14 @@ class FinancialAPITester:
         self.auth_token = None
         self.user_data = None
         self.test_results = []
+        self.security_results = []
+        self.coverage_results = {}
+        
+        # Test data for multi-tenant isolation
+        self.user1_data = None
+        self.user2_data = None
+        self.user1_token = None
+        self.user2_token = None
         
     def log_test(self, test_name, success, message="", response_data=None):
         """Log test results"""
