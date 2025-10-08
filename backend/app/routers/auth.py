@@ -18,6 +18,7 @@ async def registrar_usuario(input: UsuarioCreate):
     if usuario_existente:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
     
+    # Validações já são feitas pelo modelo Pydantic UsuarioCreate
     # Criar usuário
     usuario_dict = input.dict()
     usuario_dict["senha_hash"] = hash_senha(usuario_dict.pop("senha"))
