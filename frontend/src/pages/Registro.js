@@ -118,12 +118,18 @@ const Registro = () => {
                 <input
                   type="text"
                   value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  onChange={(e) => handleNomeChange(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    nomeErro ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="João Silva"
                   required
                   data-testid="name-input"
                 />
+              </div>
+              {nomeErro && (
+                <p className="mt-1 text-sm text-red-600">{nomeErro}</p>
+              )}
               </div>
             </div>
 
