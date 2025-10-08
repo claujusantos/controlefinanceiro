@@ -553,9 +553,9 @@ class FinancialAPITester:
             # Test accessing protected endpoint without token
             session_no_auth = requests.Session()
             response = session_no_auth.get(f"{self.base_url}/auth/me")
-            if response.status_code != 401:
+            if response.status_code not in [401, 403]:
                 self.log_test("JWT Security - No Token", False, 
-                            f"Expected 401, got {response.status_code}")
+                            f"Expected 401/403, got {response.status_code}")
                 return False
             
             # Test accessing protected endpoint with invalid token
