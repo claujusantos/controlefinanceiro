@@ -21,6 +21,20 @@ class UsuarioCreate(BaseModel):
     nome: str
     email: EmailStr
     senha: str
+    
+    @validator('nome')
+    def validate_nome(cls, v):
+        is_valid, error_message = validate_name(v)
+        if not is_valid:
+            raise ValueError(error_message)
+        return v.strip()
+    
+    @validator('senha')
+    def validate_senha(cls, v):
+        is_valid, errors = PasswordValidator.validate_password(v)
+        if not is_valid:
+            raise ValueError(f"Senha não atende aos critérios de segurança: {'; '.join(errors)}")
+        return v
 
 
 class UsuarioLogin(BaseModel):
