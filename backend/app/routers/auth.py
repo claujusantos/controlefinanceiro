@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from app.models.user import Usuario, UsuarioCreate, UsuarioLogin, Token
 from app.core.security import hash_senha, verificar_senha, criar_token, get_current_user
+from app.core.validators import PasswordValidator
 from app.database.connection import get_database
 import uuid
 
