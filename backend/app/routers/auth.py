@@ -93,3 +93,25 @@ async def obter_usuario_atual(usuario: dict = Depends(get_current_user)):
         "status_assinatura": usuario.get("status_assinatura", "active"),
         "data_expiracao": usuario.get("data_expiracao")
     }
+
+
+@router.post("/validar-senha")
+async def validar_senha(senha_data: dict):
+    """Valida força da senha"""
+    senha = senha_data.get("senha", "")
+    
+    is_valid, errors = PasswordValidator.validate_password(senha)
+    strength = PasswordValidator.get_password_strength(senha)
+    
+    return {
+        "is_valid": is_valid,
+        "errors": errors,
+        "strength": strength,
+        "criteria": {
+            "min_length": len(senha) >= 6,
+            "has_uppercase": any(c.isupper() for c in senha),
+            "has_lowercase": any(c.islower() for c in senha),
+            "has_special": any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in senha),
+            "no_spaces": " " not in senha
+        }
+    }
