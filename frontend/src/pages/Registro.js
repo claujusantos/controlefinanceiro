@@ -16,6 +16,9 @@ const Registro = () => {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
+  const [nomeErro, setNomeErro] = useState('');
+  const [emailErro, setEmailErro] = useState('');
+  const [senhaErros, setSenhaErros] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
