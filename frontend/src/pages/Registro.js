@@ -166,13 +166,30 @@ const Registro = () => {
                 <input
                   type="password"
                   value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  onChange={(e) => handleSenhaChange(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    senhaErros.length > 0 ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="••••••••"
                   required
                   minLength={6}
                   data-testid="password-input"
                 />
+              </div>
+              
+              {/* Indicador de força da senha */}
+              <PasswordStrengthIndicator 
+                password={senha} 
+                showCriteria={senha.length > 0} 
+              />
+              
+              {senhaErros.length > 0 && (
+                <div className="mt-1">
+                  {senhaErros.map((error, index) => (
+                    <p key={index} className="text-sm text-red-600">{error}</p>
+                  ))}
+                </div>
+              )}
               </div>
             </div>
 
