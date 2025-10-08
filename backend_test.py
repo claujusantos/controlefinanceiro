@@ -957,6 +957,8 @@ class FinancialAPITester:
             ("Protected Endpoints Security", self.test_protected_endpoints_security),
             ("Multi-tenant Isolation", self.test_multi_tenant_isolation),
             ("Comprehensive Validations", self.test_comprehensive_validations),
+            ("Advanced Dashboard Features", self.test_advanced_dashboard_features),
+            ("Edge Cases and Error Handling", self.test_edge_cases_and_error_handling),
         ]
         
         all_tests = core_tests + security_tests
