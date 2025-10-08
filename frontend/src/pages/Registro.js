@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User, DollarSign, AlertCircle, CheckCircle } from 'lucide-react';
+import { PasswordValidator, EmailValidator, NameValidator } from '../utils/validators';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 
 const Registro = () => {
   const navigate = useNavigate();
