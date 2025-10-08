@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend API Testing for Financial Control App
-Tests all endpoints after modular refactoring
+Tests all endpoints with >90% coverage and security validation
+Validates JWT authentication, password security, and multi-tenant isolation
 """
 
 import requests
@@ -9,6 +10,7 @@ import json
 import uuid
 from datetime import datetime, date
 import os
+import time
 
 # Get backend URL from environment
 BACKEND_URL = "https://fintracker-88.preview.emergentagent.com/api"
