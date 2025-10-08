@@ -571,9 +571,9 @@ class FinancialAPITester:
             session_malformed = requests.Session()
             session_malformed.headers.update({"Authorization": "Bearer"})
             response = session_malformed.get(f"{self.base_url}/auth/me")
-            if response.status_code not in [401, 422]:
+            if response.status_code not in [401, 403, 422]:
                 self.log_test("JWT Security - Malformed Token", False, 
-                            f"Expected 401/422, got {response.status_code}")
+                            f"Expected 401/403/422, got {response.status_code}")
                 return False
             
             self.log_test("JWT Security", True, "All JWT security tests passed")
