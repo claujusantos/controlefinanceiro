@@ -66,7 +66,7 @@ class FinancialAPITester:
             test_data = {
                 "nome": "João Silva",
                 "email": test_email,
-                "senha": "senha123456"
+                "senha": "MinhaSenh@123"
             }
             
             response = self.session.post(f"{self.base_url}/auth/registro", json=test_data)
