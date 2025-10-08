@@ -101,3 +101,73 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+## user_problem_statement: "Refactor the backend into a modular structure, following PEP 8 guidelines and clean code principles. Create Dockerfile and docker-compose.yml for backend and MongoDB. Implement comprehensive pytest coverage for all backend functions."
+
+## backend:
+  - task: "Backend Modular Refactoring"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Starting backend refactoring from monolithic server.py (1133 lines) to modular structure with app/, models/, routers/, services/, database/, core/, tests/ directories"
+
+  - task: "Dockerization Setup"
+    implemented: false
+    working: "NA"
+    file: "Dockerfile, docker-compose.yml"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to create Docker setup for FastAPI backend and MongoDB"
+
+  - task: "Pytest Implementation"
+    implemented: false
+    working: "NA"
+    file: "tests/"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need comprehensive pytest coverage for all backend functions including auth, CRUD, dashboard, Excel export, Hotmart webhook"
+
+## frontend:
+  - task: "Frontend Compatibility"
+    implemented: true
+    working: true
+    file: "React components"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Frontend is currently working, need to ensure compatibility after backend refactoring"
+
+## metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+## test_plan:
+  current_focus:
+    - "Backend Modular Refactoring"
+    - "Dockerization Setup"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+## agent_communication:
+  - agent: "main"
+    message: "Starting backend refactoring process. Current monolithic server.py has 1133 lines and needs to be split into modular structure. Will maintain all existing API functionality while improving code organization."
