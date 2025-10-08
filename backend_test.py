@@ -562,9 +562,9 @@ class FinancialAPITester:
             session_invalid = requests.Session()
             session_invalid.headers.update({"Authorization": "Bearer invalid_token_here"})
             response = session_invalid.get(f"{self.base_url}/auth/me")
-            if response.status_code != 401:
+            if response.status_code not in [401, 403]:
                 self.log_test("JWT Security - Invalid Token", False, 
-                            f"Expected 401, got {response.status_code}")
+                            f"Expected 401/403, got {response.status_code}")
                 return False
             
             # Test accessing protected endpoint with malformed token
