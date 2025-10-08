@@ -844,6 +844,90 @@ class FinancialAPITester:
             self.log_test("Comprehensive Validations", False, f"Error: {str(e)}")
             return False
     
+    def test_advanced_dashboard_features(self):
+        """Test advanced dashboard features and edge cases"""
+        if not self.auth_token:
+            self.log_test("Advanced Dashboard Features", False, "No auth token available")
+            return False
+        
+        try:
+            # Test dashboard with different period filters
+            periods = ["total", "ultimo_mes", "ultimos_6_meses"]
+            for period in periods:
+                response = self.session.get(f"{self.base_url}/dashboard?periodo={period}")
+                if response.status_code != 200:
+                    self.log_test("Advanced Dashboard - Period Filters", False, 
+                                f"Period filter '{period}' failed: {response.status_code}")
+                    return False
+            
+            # Test dashboard with custom date range
+            response = self.session.get(f"{self.base_url}/dashboard?periodo=customizado&data_inicio=2024-01-01&data_fim=2024-12-31")
+            if response.status_code != 200:
+                self.log_test("Advanced Dashboard - Custom Range", False, 
+                            f"Custom date range failed: {response.status_code}")
+                return False
+            
+            # Test all dashboard endpoints
+            dashboard_endpoints = [
+                "/dashboard",
+                "/gastos-recorrentes", 
+                "/resumo-mensal",
+                "/projecoes"
+            ]
+            
+            for endpoint in dashboard_endpoints:
+                response = self.session.get(f"{self.base_url}{endpoint}")
+                if response.status_code != 200:
+                    self.log_test("Advanced Dashboard - Endpoints", False, 
+                                f"Endpoint '{endpoint}' failed: {response.status_code}")
+                    return False
+            
+            self.log_test("Advanced Dashboard Features", True, 
+                        "All advanced dashboard features working correctly")
+            return True
+            
+        except Exception as e:
+            self.log_test("Advanced Dashboard Features", False, f"Error: {str(e)}")
+            return False
+    
+    def test_edge_cases_and_error_handling(self):
+        """Test edge cases and error handling"""
+        if not self.auth_token:
+            self.log_test("Edge Cases", False, "No auth token available")
+            return False
+        
+        try:
+            # Test accessing non-existent resources
+            response = self.session.get(f"{self.base_url}/receitas/non-existent-id")
+            if response.status_code not in [404, 422]:
+                self.log_test("Edge Cases - Non-existent Resource", False, 
+                            f"Expected 404/422, got {response.status_code}")
+                return False
+            
+            # Test updating non-existent resources
+            response = self.session.put(f"{self.base_url}/receitas/non-existent-id", 
+                                      json={"data": "2024-01-15", "descricao": "Test", 
+                                           "categoria": "Salário", "forma_recebimento": "PIX", "valor": 1000})
+            if response.status_code not in [404, 422]:
+                self.log_test("Edge Cases - Update Non-existent", False, 
+                            f"Expected 404/422, got {response.status_code}")
+                return False
+            
+            # Test deleting non-existent resources
+            response = self.session.delete(f"{self.base_url}/receitas/non-existent-id")
+            if response.status_code not in [404, 422]:
+                self.log_test("Edge Cases - Delete Non-existent", False, 
+                            f"Expected 404/422, got {response.status_code}")
+                return False
+            
+            self.log_test("Edge Cases and Error Handling", True, 
+                        "All edge cases handled correctly")
+            return True
+            
+        except Exception as e:
+            self.log_test("Edge Cases and Error Handling", False, f"Error: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run comprehensive backend tests with >90% coverage and security validation"""
         print("🚀 Starting Comprehensive Financial Control Backend API Tests")
