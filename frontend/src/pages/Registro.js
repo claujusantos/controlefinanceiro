@@ -142,12 +142,18 @@ const Registro = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    emailErro ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="seu@email.com"
                   required
                   data-testid="email-input"
                 />
+              </div>
+              {emailErro && (
+                <p className="mt-1 text-sm text-red-600">{emailErro}</p>
+              )}
               </div>
             </div>
 
