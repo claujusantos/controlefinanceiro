@@ -246,7 +246,7 @@ const Receitas = () => {
           <tbody className="divide-y divide-gray-200">
             {receitas.map((receita) => (
               <tr key={receita.id} data-testid={`receita-row-${receita.id}`}>
-                <td className="px-6 py-4 text-sm text-gray-900">{receita.data}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">{formatDateForDisplay(receita.data)}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{receita.descricao}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{receita.categoria}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{receita.forma_recebimento}</td>
