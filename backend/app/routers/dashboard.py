@@ -7,7 +7,7 @@ from app.models.user import Usuario
 from app.services.dashboard_service import DashboardService
 from app.models.financial import ResumoMensal
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter(tags=["dashboard"])
 
 auth_service = AuthService()
 
