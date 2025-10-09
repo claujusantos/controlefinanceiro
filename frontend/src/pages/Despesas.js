@@ -175,15 +175,17 @@ const Despesas = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-              <input
-                type="text"
+              <select
                 value={formData.forma_pagamento}
                 onChange={(e) => setFormData({ ...formData, forma_pagamento: e.target.value })}
-                placeholder="Ex: Cartão, Dinheiro, PIX"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                 required
-                data-testid="despesa-forma-input"
-              />
+                data-testid="despesa-forma-select"
+              >
+                {FORMAS_PAGAMENTO.map((forma) => (
+                  <option key={forma} value={forma}>{forma}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Valor (R$)</label>
