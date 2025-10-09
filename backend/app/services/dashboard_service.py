@@ -1,15 +1,18 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
-from collections import Counter
+
 from app.database.connection import get_database
-from app.models.financial import ResumoMensal
+from app.models.financial import ResumoMensal, StatusSaldo
 
 
 class DashboardService:
-    """Service for dashboard analytics and calculations"""
+    """
+    Serviço para analytics de dashboard, formatado para máxima legibilidade.
+    """
     
     def __init__(self):
         self.db = get_database()
+
     
     async def get_dashboard_data(
         self, 
@@ -18,232 +21,242 @@ class DashboardService:
         data_inicio: Optional[str] = None,
         data_fim: Optional[str] = None
     ) -> Dict:
-        """Retorna dados agregados para o dashboard com filtros de data"""
         
-        # Determinar o filtro baseado no período
-        filtro = {}
-        
+        # --- 1. Preparação do Filtro ---
+        filtro_db = {"user_id": user_id}
+        agora_utc = datetime.now(timezone.utc)
+
         if periodo == "ultimo_mes":
-            hoje = datetime.now()
-            filtro["mes"] = hoje.month
-            filtro["ano"] = hoje.year
+            filtro_db["mes"] = agora_utc.month
+            filtro_db["ano"] = agora_utc.year
+        
         elif periodo == "ultimos_6_meses":
-            pass  # Filtramos depois
+            data_limite = agora_utc - timedelta(days=180)
+            filtro_db["data"] = {"$gte": data_limite}
+        
         elif periodo == "customizado" and data_inicio and data_fim:
-            pass  # Filtramos depois
-        
-        # Buscar todos os dados
-        todas_receitas = await self.db.receitas.find({"user_id": user_id}).to_list(1000)
-        todas_despesas = await self.db.despesas.find({"user_id": user_id}).to_list(1000)
-        
-        # Aplicar filtros de data customizada
-        if periodo == "ultimos_6_meses":
-            hoje = datetime.now()
-            data_limite = hoje - timedelta(days=180)
-            todas_receitas = [r for r in todas_receitas if datetime.strptime(r.get("data"), "%Y-%m-%d") >= data_limite]
-            todas_despesas = [d for d in todas_despesas if datetime.strptime(d.get("data"), "%Y-%m-%d") >= data_limite]
-        elif periodo == "customizado" and data_inicio and data_fim:
-            dt_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
-            dt_fim = datetime.strptime(data_fim, "%Y-%m-%d")
-            todas_receitas = [r for r in todas_receitas if dt_inicio <= datetime.strptime(r.get("data"), "%Y-%m-%d") <= dt_fim]
-            todas_despesas = [d for d in todas_despesas if dt_inicio <= datetime.strptime(d.get("data"), "%Y-%m-%d") <= dt_fim]
-        elif periodo == "ultimo_mes":
-            todas_receitas = [r for r in todas_receitas if r.get("mes") == filtro.get("mes") and r.get("ano") == filtro.get("ano")]
-            todas_despesas = [d for d in todas_despesas if d.get("mes") == filtro.get("mes") and d.get("ano") == filtro.get("ano")]
-        
-        total_receitas = sum(r.get("valor", 0) for r in todas_receitas)
-        total_despesas = sum(d.get("valor", 0) for d in todas_despesas)
+            dt_inicio = datetime.strptime(
+                data_inicio, "%Y-%m-%d"
+            ).replace(tzinfo=timezone.utc)
+            dt_fim = datetime.strptime(
+                data_fim, "%Y-%m-%d"
+            ).replace(tzinfo=timezone.utc) + timedelta(days=1)
+            filtro_db["data"] = {"$gte": dt_inicio, "$lt": dt_fim}
+
+        # --- 2. Busca dos Dados no Banco ---
+        receitas_filtradas = await self.db.receitas.find(filtro_db).to_list(None)
+        despesas_filtradas = await self.db.despesas.find(filtro_db).to_list(None)
+
+        # --- 3. Cálculos Principais ---
+        total_receitas = sum(r.get("valor", 0) for r in receitas_filtradas)
+        total_despesas = sum(d.get("valor", 0) for d in despesas_filtradas)
         saldo = total_receitas - total_despesas
-        percentual_economia = (saldo / total_receitas * 100) if total_receitas > 0 else 0
+        percentual = (saldo / total_receitas * 100) if total_receitas > 0 else 0
         
-        # Distribuição por categorias (despesas)
-        categorias_dist = {}
-        for d in todas_despesas:
-            cat = d.get("categoria", "Outros")
-            categorias_dist[cat] = categorias_dist.get(cat, 0) + d.get("valor", 0)
+        # --- 4. Processamento de Agrupamentos ---
+        dist_categorias = {}
+        for despesa in despesas_filtradas:
+            categoria = despesa.get("categoria", "Outros")
+            dist_categorias[categoria] = dist_categorias.get(
+                categoria, 0
+            ) + despesa.get("valor", 0)
         
-        # Evolução mensal
-        meses_anos = set()
-        for r in todas_receitas:
-            meses_anos.add((r.get("mes"), r.get("ano")))
-        for d in todas_despesas:
-            meses_anos.add((d.get("mes"), d.get("ano")))
+        meses_e_anos = set((d.get("mes"), d.get("ano")) for d in despesas_filtradas)
+        meses_e_anos.update((r.get("mes"), r.get("ano")) for r in receitas_filtradas)
         
-        evolucao = []
-        for m, a in sorted(meses_anos):
-            recs = sum(r.get("valor", 0) for r in todas_receitas if r.get("mes") == m and r.get("ano") == a)
-            desps = sum(d.get("valor", 0) for d in todas_despesas if d.get("mes") == m and d.get("ano") == a)
-            evolucao.append({
-                "mes": m,
-                "ano": a,
-                "receitas": recs,
-                "despesas": desps,
-                "saldo": recs - desps
+        evolucao_mensal = []
+        for mes, ano in sorted(filter(None, meses_e_anos)):
+            receitas_no_mes = sum(
+                r.get("valor", 0) for r in receitas_filtradas 
+                if r.get("mes") == mes and r.get("ano") == ano
+            )
+            despesas_no_mes = sum(
+                d.get("valor", 0) for d in despesas_filtradas 
+                if d.get("mes") == mes and d.get("ano") == ano
+            )
+            evolucao_mensal.append({
+                "mes": mes, "ano": ano,
+                "receitas": receitas_no_mes,
+                "despesas": despesas_no_mes,
+                "saldo": receitas_no_mes - despesas_no_mes
             })
         
+        # --- 5. Montagem do Retorno ---
         return {
             "total_receitas": total_receitas,
             "total_despesas": total_despesas,
             "saldo": saldo,
-            "percentual_economia": round(percentual_economia, 2),
-            "lucro_prejuizo": "lucro" if saldo >= 0 else "prejuizo",
-            "categorias_distribuicao": [{"categoria": k, "valor": v} for k, v in categorias_dist.items()],
-            "evolucao_mensal": evolucao
+            "percentual_economia": round(percentual, 2),
+            "lucro_prejuizo": (
+                StatusSaldo.LUCRO.value if saldo >= 0 else StatusSaldo.PREJUIZO.value
+            ),
+            "categorias_distribuicao": [
+                {"categoria": nome, "valor": valor_total} 
+                for nome, valor_total in dist_categorias.items()
+            ],
+            "evolucao_mensal": evolucao_mensal
         }
+
     
     async def get_gastos_recorrentes(self, user_id: str) -> Dict:
-        """Retorna análise de gastos recorrentes e frequentes"""
         
-        despesas = await self.db.despesas.find({"user_id": user_id}).to_list(1000)
+        pipeline_categorias = [
+            {"$match": {"user_id": user_id}},
+            {
+                "$group": {
+                    "_id": "$categoria",
+                    "ocorrencias": {"$sum": 1},
+                    "valor_total": {"$sum": "$valor"}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0, "categoria": "$_id", "ocorrencias": 1,
+                    "valor_total": 1, 
+                    "valor_medio": {"$divide": ["$valor_total", "$ocorrencias"]}
+                }
+            },
+            {"$sort": {"ocorrencias": -1}},
+            {"$limit": 10}
+        ]
         
-        if not despesas:
+        pipeline_descricoes = [
+            {"$match": {"user_id": user_id}},
+            {
+                "$group": {
+                    "_id": {"$toLower": "$descricao"},
+                    "ocorrencias": {"$sum": 1},
+                    "valor_total": {"$sum": "$valor"},
+                    "descricao_original": {"$first": "$descricao"}
+                }
+            },
+            {"$match": {"ocorrencias": {"$gt": 1}}},
+            {
+                "$project": {
+                    "_id": 0, "descricao": "$descricao_original",
+                    "ocorrencias": 1, "valor_total": 1,
+                    "valor_medio": {"$divide": ["$valor_total", "$ocorrencias"]}
+                }
+            },
+            {"$sort": {"ocorrencias": -1}},
+            {"$limit": 10}
+        ]
+
+        cat_agrupadas = await self.db.despesas.aggregate(pipeline_categorias).to_list(None)
+        desc_agrupadas = await self.db.despesas.aggregate(pipeline_descricoes).to_list(None)
+        
+        if not cat_agrupadas:
             return {
                 "categorias_mais_frequentes": [],
                 "descricoes_recorrentes": [],
                 "media_por_categoria": []
             }
-        
-        # Contar frequência por categoria
-        categorias_count = Counter(d.get("categoria") for d in despesas)
-        categorias_valores = {}
-        categorias_ocorrencias = {}
-        
-        for d in despesas:
-            cat = d.get("categoria", "Outros")
-            if cat not in categorias_valores:
-                categorias_valores[cat] = 0
-                categorias_ocorrencias[cat] = 0
-            categorias_valores[cat] += d.get("valor", 0)
-            categorias_ocorrencias[cat] += 1
-        
-        # Categorias mais frequentes com valores
-        categorias_freq = []
-        for cat, count in categorias_count.most_common():
-            categorias_freq.append({
-                "categoria": cat,
-                "ocorrencias": count,
-                "valor_total": categorias_valores[cat],
-                "valor_medio": categorias_valores[cat] / count if count > 0 else 0
-            })
-        
-        # Descrições que se repetem (gastos recorrentes)
-        descricoes_count = Counter(d.get("descricao").lower() for d in despesas)
-        descricoes_recorrentes = []
-        
-        for desc, count in descricoes_count.most_common(10):
-            if count > 1:  # Apenas descrições que aparecem mais de uma vez
-                valor_total = sum(d.get("valor", 0) for d in despesas if d.get("descricao").lower() == desc)
-                descricoes_recorrentes.append({
-                    "descricao": desc.title(),
-                    "ocorrencias": count,
-                    "valor_total": valor_total,
-                    "valor_medio": valor_total / count
-                })
-        
-        # Média de gasto por categoria
-        media_por_cat = []
-        for cat, total in categorias_valores.items():
-            count = categorias_ocorrencias[cat]
-            media_por_cat.append({
-                "categoria": cat,
-                "media_gasto": total / count if count > 0 else 0,
-                "total_gasto": total
-            })
-        
-        # Ordenar por total gasto
-        media_por_cat.sort(key=lambda x: x["total_gasto"], reverse=True)
-        
+
         return {
-            "categorias_mais_frequentes": categorias_freq[:10],
-            "descricoes_recorrentes": descricoes_recorrentes,
-            "media_por_categoria": media_por_cat
+            "categorias_mais_frequentes": cat_agrupadas,
+            "descricoes_recorrentes": desc_agrupadas,
+            "media_por_categoria": sorted(
+                cat_agrupadas, key=lambda item: item["valor_total"], reverse=True
+            )
         }
+
     
     async def get_resumo_mensal(self, user_id: str) -> List[ResumoMensal]:
-        """Retorna resumo de todos os meses"""
-        receitas = await self.db.receitas.find({"user_id": user_id}).to_list(1000)
-        despesas = await self.db.despesas.find({"user_id": user_id}).to_list(1000)
         
-        meses_anos = set()
-        for r in receitas:
-            meses_anos.add((r.get("mes"), r.get("ano")))
-        for d in despesas:
-            meses_anos.add((d.get("mes"), d.get("ano")))
+        receitas = await self.db.receitas.find({"user_id": user_id}).to_list(None)
+        despesas = await self.db.despesas.find({"user_id": user_id}).to_list(None)
+        
+        meses_e_anos = set((r.get("mes"), r.get("ano")) for r in receitas)
+        meses_e_anos.update((d.get("mes"), d.get("ano")) for d in despesas)
         
         resumos = []
-        for m, a in sorted(meses_anos):
-            total_rec = sum(r.get("valor", 0) for r in receitas if r.get("mes") == m and r.get("ano") == a)
-            total_desp = sum(d.get("valor", 0) for d in despesas if d.get("mes") == m and d.get("ano") == a)
-            saldo = total_rec - total_desp
-            perc = (saldo / total_rec * 100) if total_rec > 0 else 0
+        for mes, ano in sorted(filter(None, meses_e_anos)):
+            total_receitas_mes = sum(
+                r.get("valor", 0) for r in receitas 
+                if r.get("mes") == mes and r.get("ano") == ano
+            )
+            total_despesas_mes = sum(
+                d.get("valor", 0) for d in despesas 
+                if d.get("mes") == mes and d.get("ano") == ano
+            )
+            saldo = total_receitas_mes - total_despesas_mes
+            percentual = (saldo / total_receitas_mes * 100) if total_receitas_mes > 0 else 0
             
             resumos.append(ResumoMensal(
-                mes=m,
-                ano=a,
-                total_receitas=total_rec,
-                total_despesas=total_desp,
-                saldo=saldo,
-                percentual_economia=round(perc, 2),
-                lucro_prejuizo="lucro" if saldo >= 0 else "prejuizo"
+                mes=mes, ano=ano, 
+                total_receitas=total_receitas_mes, 
+                total_despesas=total_despesas_mes,
+                saldo=saldo, 
+                percentual_economia=round(percentual, 2),
+                lucro_prejuizo=(
+                    StatusSaldo.LUCRO if saldo >= 0 else StatusSaldo.PREJUIZO
+                )
             ))
         
         return resumos
+
     
     async def get_projecoes(self, user_id: str) -> Dict:
-        """Calcula projeções financeiras baseadas nas médias"""
-        receitas = await self.db.receitas.find({"user_id": user_id}).to_list(1000)
-        despesas = await self.db.despesas.find({"user_id": user_id}).to_list(1000)
         
-        if not receitas and not despesas:
+        # Etapa 1: Encontrar os últimos 3 meses com atividade
+        pipeline_meses = [
+            {"$match": {"user_id": user_id}},
+            {"$group": {"_id": {"ano": "$ano", "mes": "$mes"}}},
+            {"$sort": {"_id.ano": -1, "_id.mes": -1}},
+            {"$limit": 3},
+            {"$project": {"_id": 0, "ano": "$_id.ano", "mes": "$_id.mes"}}
+        ]
+        
+        meses_receitas = await self.db.receitas.aggregate(pipeline_meses).to_list(None)
+        meses_despesas = await self.db.despesas.aggregate(pipeline_meses).to_list(None)
+        
+        meses_combinados = sorted(
+            list({(d['ano'], d['mes']) for d in meses_receitas + meses_despesas}),
+            reverse=True
+        )[:3]
+
+        if not meses_combinados:
             return {
-                "media_receitas": 0,
-                "media_despesas": 0,
-                "saldo_projetado": 0,
-                "tendencia": "neutro",
-                "projecao_6_meses": [
-                    {
-                        "mes": i + 1,
-                        "receita_estimada": 0,
-                        "despesa_estimada": 0,
-                        "saldo_estimado": 0
-                    }
-                    for i in range(6)
-                ]
+                "media_receitas": 0, "media_despesas": 0, 
+                "saldo_projetado": 0, "tendencia": "neutro", 
+                "projecao_6_meses": []
             }
+
+        # Etapa 2: Criar filtro para buscar dados apenas desses meses
+        filtro_periodo = {"$or": [
+            {"ano": ano, "mes": mes} for ano, mes in meses_combinados
+        ]}
+        filtro_final = {"user_id": user_id, **filtro_periodo}
+
+        # Etapa 3: Buscar os dados já filtrados
+        receitas_periodo = await self.db.receitas.find(filtro_final).to_list(None)
+        despesas_periodo = await self.db.despesas.find(filtro_final).to_list(None)
+
+        # Etapa 4: Calcular média sobre um conjunto de dados muito menor
+        total_receitas = sum(r['valor'] for r in receitas_periodo)
+        total_despesas = sum(d['valor'] for d in despesas_periodo)
         
-        # Calcular médias dos últimos 3 meses
-        meses_anos = set()
-        for r in receitas:
-            meses_anos.add((r.get("mes"), r.get("ano")))
-        for d in despesas:
-            meses_anos.add((d.get("mes"), d.get("ano")))
-        
-        ultimos_meses = sorted(meses_anos)[-3:]
-        
-        total_rec = 0
-        total_desp = 0
-        for m, a in ultimos_meses:
-            total_rec += sum(r.get("valor", 0) for r in receitas if r.get("mes") == m and r.get("ano") == a)
-            total_desp += sum(d.get("valor", 0) for d in despesas if d.get("mes") == m and d.get("ano") == a)
-        
-        media_rec = total_rec / len(ultimos_meses) if ultimos_meses else 0
-        media_desp = total_desp / len(ultimos_meses) if ultimos_meses else 0
-        saldo_proj = media_rec - media_desp
-        
-        tendencia = "crescimento" if saldo_proj > 0 else "declinio" if saldo_proj < 0 else "neutro"
-        
+        num_meses = len(meses_combinados)
+        media_receitas = total_receitas / num_meses if num_meses > 0 else 0
+        media_despesas = total_despesas / num_meses if num_meses > 0 else 0
+        saldo_projetado = media_receitas - media_despesas
+        tendencia = "crescimento" if saldo_projetado > 0 else "declinio" if saldo_projetado < 0 else "neutro"
+
+        projecao_futura = [
+            {
+                "mes": i + 1,
+                "receita_estimada": round(media_receitas, 2),
+                "despesa_estimada": round(media_despesas, 2),
+                "saldo_estimado": round(saldo_projetado, 2),
+            } 
+            for i in range(6)
+        ]
+
+        # Etapa 5: Montagem do retorno
         return {
-            "media_receitas": round(media_rec, 2),
-            "media_despesas": round(media_desp, 2),
-            "saldo_projetado": round(saldo_proj, 2),
+            "media_receitas": round(media_receitas, 2), 
+            "media_despesas": round(media_despesas, 2),
+            "saldo_projetado": round(saldo_projetado, 2), 
             "tendencia": tendencia,
-            "projecao_6_meses": [
-                {
-                    "mes": i + 1,
-                    "receita_estimada": round(media_rec, 2),
-                    "despesa_estimada": round(media_desp, 2),
-                    "saldo_estimado": round(saldo_proj, 2)
-                }
-                for i in range(6)
-            ]
+            "projecao_6_meses": projecao_futura
         }

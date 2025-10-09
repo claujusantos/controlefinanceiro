@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).parent.parent.parent
 load_dotenv(ROOT_DIR / '.env')
 
+#TODO: REMOVER A STR EMFRENTE DA CHAVE SUPER SEGURA PELO AMOR DE DEUS!!!!!!!!!!!!!!!!!!!!!!!
 # Security
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'sua-chave-secreta-super-segura-mude-em-producao')
 ALGORITHM = "HS256"

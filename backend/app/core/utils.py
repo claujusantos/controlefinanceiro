@@ -1,6 +1,5 @@
 from datetime import datetime
 
-
 def extrair_mes_ano(data_str: str):
     """Extrai mês e ano de uma string de data YYYY-MM-DD"""
     try:

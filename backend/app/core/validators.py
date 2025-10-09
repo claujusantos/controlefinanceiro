@@ -1,7 +1,6 @@
 import re
 from typing import List
 
-
 class PasswordValidator:
     """Validador de senhas seguras"""
     

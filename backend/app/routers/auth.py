@@ -1,47 +1,47 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from pydantic import BaseModel
+from typing import List
+import uuid
+
 from app.models.user import Usuario, UsuarioCreate, UsuarioLogin, Token
-from app.core.security import hash_senha, verificar_senha, criar_token, get_current_user
+from app.models.financial import Categoria, TipoCategoria 
+
+from app.core.security import AuthService 
 from app.core.validators import PasswordValidator
 from app.database.connection import get_database
-import uuid
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+auth_service = AuthService()
+
+class SenhaPayload(BaseModel):
+    senha: str
 
 @router.post("/registro", response_model=Token, status_code=status.HTTP_201_CREATED)
-async def registrar_usuario(input: UsuarioCreate):
+async def registrar_usuario(input_data: UsuarioCreate):
     """Registra novo usuário"""
     db = get_database()
     
-    # Verificar se email já existe
-    usuario_existente = await db.usuarios.find_one({"email": input.email})
+    usuario_existente = await db.usuarios.find_one({"email": input_data.email})
     if usuario_existente:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
     
-    # Validações já são feitas pelo modelo Pydantic UsuarioCreate
-    # Criar usuário
-    usuario_dict = input.dict()
-    usuario_dict["senha_hash"] = hash_senha(usuario_dict.pop("senha"))
-    usuario_obj = Usuario(**usuario_dict)
+    usuario_para_salvar = input_data.model_dump()
+    usuario_para_salvar["senha_hash"] = auth_service.hash_senha(usuario_para_salvar.pop("senha"))
     
-    await db.usuarios.insert_one(usuario_obj.dict())
+    usuario_obj = Usuario(**usuario_para_salvar)
     
-    # Criar categorias padrão para o novo usuário
+    await db.usuarios.insert_one(usuario_obj.model_dump())
+    
     categorias_padrao = [
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Salário", "tipo": "receita", "cor": "#10B981"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Freelance", "tipo": "receita", "cor": "#34D399"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Investimentos", "tipo": "receita", "cor": "#6EE7B7"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Alimentação", "tipo": "despesa", "cor": "#EF4444"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Transporte", "tipo": "despesa", "cor": "#F87171"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Moradia", "tipo": "despesa", "cor": "#FCA5A5"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Lazer", "tipo": "despesa", "cor": "#FCD34D"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Saúde", "tipo": "despesa", "cor": "#FB923C"},
-        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Educação", "tipo": "despesa", "cor": "#A78BFA"},
+        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Salário", "tipo": TipoCategoria.RECEITA.value, "cor": "#10B981"},
+        {"id": str(uuid.uuid4()), "user_id": usuario_obj.id, "nome": "Alimentação", "tipo": TipoCategoria.DESPESA.value, "cor": "#EF4444"},
     ]
-    await db.categorias.insert_many(categorias_padrao)
+
+    if categorias_padrao:
+        await db.categorias.insert_many(categorias_padrao)
     
-    # Criar token
-    token = criar_token(usuario_obj.id, usuario_obj.email)
+    token = auth_service.criar_token(usuario_obj.id, usuario_obj.email)
     
     return {
         "access_token": token,
@@ -55,21 +55,18 @@ async def registrar_usuario(input: UsuarioCreate):
 
 
 @router.post("/login", response_model=Token)
-async def login_usuario(input: UsuarioLogin):
+async def login_usuario(input_data: UsuarioLogin):
     """Faz login do usuário"""
     db = get_database()
     
-    # Buscar usuário
-    usuario = await db.usuarios.find_one({"email": input.email})
-    if not usuario:
-        raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+    usuario = await db.usuarios.find_one({"email": input_data.email})
+    if not usuario or not auth_service.verificar_senha(input_data.senha, usuario["senha_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email ou senha incorretos"
+        )
     
-    # Verificar senha
-    if not verificar_senha(input.senha, usuario["senha_hash"]):
-        raise HTTPException(status_code=401, detail="Email ou senha incorretos")
-    
-    # Criar token
-    token = criar_token(usuario["id"], usuario["email"])
+    token = auth_service.criar_token(usuario["id"], usuario["email"])
     
     return {
         "access_token": token,
@@ -82,31 +79,22 @@ async def login_usuario(input: UsuarioLogin):
     }
 
 
-@router.get("/me")
-async def obter_usuario_atual(usuario: dict = Depends(get_current_user)):
+@router.get("/me", response_model=Usuario) 
+async def obter_usuario_atual(usuario: Usuario = Depends(auth_service.get_current_user)):
     """Retorna dados do usuário logado"""
-    return {
-        "id": usuario["id"],
-        "nome": usuario["nome"],
-        "email": usuario["email"],
-        "plano": usuario.get("plano", "trial"),
-        "status_assinatura": usuario.get("status_assinatura", "active"),
-        "data_expiracao": usuario.get("data_expiracao")
-    }
+    return usuario
 
 
 @router.post("/validar-senha")
-async def validar_senha(senha_data: dict):
+async def validar_senha(payload: SenhaPayload): 
     """Valida força da senha"""
-    senha = senha_data.get("senha", "")
+    senha = payload.senha
     
     is_valid, errors = PasswordValidator.validate_password(senha)
     strength = PasswordValidator.get_password_strength(senha)
     
     return {
-        "is_valid": is_valid,
-        "errors": errors,
-        "strength": strength,
+        "is_valid": is_valid, "errors": errors, "strength": strength,
         "criteria": {
             "min_length": len(senha) >= 6,
             "has_uppercase": any(c.isupper() for c in senha),

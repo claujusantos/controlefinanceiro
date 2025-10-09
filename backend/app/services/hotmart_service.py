@@ -29,10 +29,8 @@ class HotmartService:
             transaction_code = data.get("purchase", {}).get("transaction")
             subscriber_code = data.get("subscription", {}).get("subscriber_code")
             product_id = data.get("product", {}).get("id")
-            
-            # Identificar o plano baseado no product_id da Hotmart
+
             plano_map = {
-                # Você vai preencher com os IDs reais dos seus produtos na Hotmart
                 "PRODUCT_ID_MENSAL": "mensal",
                 "PRODUCT_ID_SEMESTRAL": "semestral",
                 "PRODUCT_ID_ANUAL": "anual"
@@ -40,7 +38,7 @@ class HotmartService:
             
             plano = plano_map.get(str(product_id), "mensal")
             
-            # Buscar usuário pelo email
+
             usuario = await self.db.usuarios.find_one({"email": buyer_email})
             
             if event == "PURCHASE_COMPLETE":
@@ -49,7 +47,7 @@ class HotmartService:
                     transaction_code, data
                 )
             
-            elif event in ["PURCHASE_CANCELED", "PURCHASE_REFUNDED", "SUBSCRIPTION_CANCELLATION"]:
+            elif event in ["PURCHASE_CANCELED", "PURCHASE_REFUNDED", "SUBSCRIPTION_CANCELLATION",]:
                 await self._process_cancellation(usuario, buyer_email)
             
             return {"status": "success", "message": "Webhook processed"}
