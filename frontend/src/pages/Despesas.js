@@ -35,7 +35,7 @@ const Despesas = () => {
   const fetchCategorias = async () => {
     try {
       const response = await axios.get(`${API}/categorias`);
-      setCategorias(response.data.filter(c => c.tipo === 'despesa'));
+      setCategorias(response.data.filter(c => c.tipo === TipoCategoria.DESPESA));
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
     }
