@@ -219,7 +219,7 @@
 
 ## test_plan:
   current_focus:
-    - "Password Validation System"
+    - "Frontend Refactoring with Enums and Date Utils"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
