@@ -14,10 +14,10 @@ const Receitas = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    data: '',
+    data: getCurrentDateForInput(),
     descricao: '',
     categoria: '',
-    forma_recebimento: '',
+    forma_recebimento: FORMAS_RECEBIMENTO[0], // PIX como padrão
     valor: ''
   });
 
