@@ -70,7 +70,7 @@ const Despesas = () => {
 
   const handleEdit = (despesa) => {
     setFormData({
-      data: despesa.data,
+      data: formatDateForInput(despesa.data),
       descricao: despesa.descricao,
       categoria: despesa.categoria,
       forma_pagamento: despesa.forma_pagamento,
