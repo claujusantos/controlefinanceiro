@@ -246,7 +246,7 @@ const Despesas = () => {
           <tbody className="divide-y divide-gray-200">
             {despesas.map((despesa) => (
               <tr key={despesa.id} data-testid={`despesa-row-${despesa.id}`}>
-                <td className="px-6 py-4 text-sm text-gray-900">{despesa.data}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">{formatDateForDisplay(despesa.data)}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{despesa.descricao}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{despesa.categoria}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{despesa.forma_pagamento}</td>
