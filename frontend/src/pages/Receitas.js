@@ -49,16 +49,22 @@ const Receitas = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const dataToSend = {
+        ...formData,
+        data: formatDateForBackend(formData.data),
+        valor: parseFloat(formData.valor)
+      };
+      
       if (editingId) {
-        await axios.put(`${API}/receitas/${editingId}`, formData);
+        await axios.put(`${API}/receitas/${editingId}`, dataToSend);
       } else {
-        await axios.post(`${API}/receitas`, formData);
+        await axios.post(`${API}/receitas`, dataToSend);
       }
       fetchReceitas();
       resetForm();
     } catch (error) {
       console.error('Erro ao salvar receita:', error);
-      alert('Erro ao salvar receita');
+      alert('Erro ao salvar receita: ' + (error.response?.data?.detail || 'Erro desconhecido'));
     }
   };
 
