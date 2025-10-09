@@ -70,7 +70,7 @@ const Receitas = () => {
 
   const handleEdit = (receita) => {
     setFormData({
-      data: receita.data,
+      data: formatDateForInput(receita.data),
       descricao: receita.descricao,
       categoria: receita.categoria,
       forma_recebimento: receita.forma_recebimento,
