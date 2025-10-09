@@ -175,15 +175,17 @@ const Receitas = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Recebimento</label>
-              <input
-                type="text"
+              <select
                 value={formData.forma_recebimento}
                 onChange={(e) => setFormData({ ...formData, forma_recebimento: e.target.value })}
-                placeholder="Ex: Transferência, Dinheiro, PIX"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                 required
-                data-testid="receita-forma-input"
-              />
+                data-testid="receita-forma-select"
+              >
+                {FORMAS_RECEBIMENTO.map((forma) => (
+                  <option key={forma} value={forma}>{forma}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Valor (R$)</label>
