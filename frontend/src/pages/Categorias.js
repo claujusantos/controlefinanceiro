@@ -133,8 +133,11 @@ const Categorias = () => {
                 required
                 data-testid="categoria-tipo-select"
               >
-                <option value="receita">Receita</option>
-                <option value="despesa">Despesa</option>
+                {TIPOS_CATEGORIA.map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {tipo === TipoCategoria.RECEITA ? 'Receita' : 'Despesa'}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
