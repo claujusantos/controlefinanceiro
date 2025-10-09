@@ -81,6 +81,8 @@ async def criar_receita(input_data: ReceitaCreate, usuario: Usuario = Depends(au
     db = get_database()
     rec_dict = input_data.model_dump()
     rec_dict["user_id"] = usuario.id
+    rec_dict["mes"] = input_data.data.month
+    rec_dict["ano"] = input_data.data.year
     
     rec_obj = Receita(**rec_dict)
     await db.receitas.insert_one(rec_obj.model_dump())
