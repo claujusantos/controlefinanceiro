@@ -14,10 +14,10 @@ const Despesas = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    data: '',
+    data: getCurrentDateForInput(),
     descricao: '',
     categoria: '',
-    forma_pagamento: '',
+    forma_pagamento: FORMAS_PAGAMENTO[0], // PIX como padrão
     valor: ''
   });
 
