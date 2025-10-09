@@ -134,6 +134,8 @@ async def criar_despesa(input_data: DespesaCreate, usuario: Usuario = Depends(au
     db = get_database()
     desp_dict = input_data.model_dump()
     desp_dict["user_id"] = usuario.id
+    desp_dict["mes"] = input_data.data.month
+    desp_dict["ano"] = input_data.data.year
     
     desp_obj = Despesa(**desp_dict)
     await db.despesas.insert_one(desp_obj.model_dump())
