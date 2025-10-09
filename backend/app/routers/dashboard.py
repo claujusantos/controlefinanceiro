@@ -12,7 +12,7 @@ router = APIRouter(tags=["dashboard"])
 auth_service = AuthService()
 
 
-@router.get("/")
+@router.get("/dashboard")
 async def obter_dashboard(
     usuario: Usuario = Depends(auth_service.get_current_user),
     periodo: Optional[str] = None,
