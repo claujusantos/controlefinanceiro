@@ -11,7 +11,7 @@ from app.models.financial import (
 )
 from app.database.connection import get_database
 
-router = APIRouter(prefix="/financial", tags=["financial"])
+router = APIRouter(tags=["financial"])
 
 auth_service = AuthService()
 
