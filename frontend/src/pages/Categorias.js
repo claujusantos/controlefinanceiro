@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
+import { TipoCategoria, TIPOS_CATEGORIA } from '../constants/enums';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
