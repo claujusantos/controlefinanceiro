@@ -80,8 +80,8 @@ const Categorias = () => {
     setShowForm(false);
   };
 
-  const categoriasReceita = categorias.filter(c => c.tipo === 'receita');
-  const categoriasDespesa = categorias.filter(c => c.tipo === 'despesa');
+  const categoriasReceita = categorias.filter(c => c.tipo === TipoCategoria.RECEITA);
+  const categoriasDespesa = categorias.filter(c => c.tipo === TipoCategoria.DESPESA);
 
   return (
     <div className="space-y-6" data-testid="categorias-page">
