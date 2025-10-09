@@ -49,16 +49,22 @@ const Despesas = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const dataToSend = {
+        ...formData,
+        data: formatDateForBackend(formData.data),
+        valor: parseFloat(formData.valor)
+      };
+      
       if (editingId) {
-        await axios.put(`${API}/despesas/${editingId}`, formData);
+        await axios.put(`${API}/despesas/${editingId}`, dataToSend);
       } else {
-        await axios.post(`${API}/despesas`, formData);
+        await axios.post(`${API}/despesas`, dataToSend);
       }
       fetchDespesas();
       resetForm();
     } catch (error) {
       console.error('Erro ao salvar despesa:', error);
-      alert('Erro ao salvar despesa');
+      alert('Erro ao salvar despesa: ' + (error.response?.data?.detail || 'Erro desconhecido'));
     }
   };
 
