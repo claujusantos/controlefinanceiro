@@ -73,7 +73,7 @@ const Categorias = () => {
   const resetForm = () => {
     setFormData({
       nome: '',
-      tipo: 'receita',
+      tipo: TipoCategoria.RECEITA,
       cor: '#3B82F6'
     });
     setEditingId(null);
