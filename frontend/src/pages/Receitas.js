@@ -35,7 +35,7 @@ const Receitas = () => {
   const fetchCategorias = async () => {
     try {
       const response = await axios.get(`${API}/categorias`);
-      setCategorias(response.data.filter(c => c.tipo === 'receita'));
+      setCategorias(response.data.filter(c => c.tipo === TipoCategoria.RECEITA));
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
     }
