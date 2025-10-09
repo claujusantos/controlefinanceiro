@@ -94,10 +94,10 @@ const Receitas = () => {
 
   const resetForm = () => {
     setFormData({
-      data: '',
+      data: getCurrentDateForInput(),
       descricao: '',
       categoria: '',
-      forma_recebimento: '',
+      forma_recebimento: FORMAS_RECEBIMENTO[0], // PIX como padrão
       valor: ''
     });
     setEditingId(null);
