@@ -13,7 +13,7 @@ const Categorias = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     nome: '',
-    tipo: 'receita',
+    tipo: TipoCategoria.RECEITA,
     cor: '#3B82F6'
   });
 
