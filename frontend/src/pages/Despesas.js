@@ -94,10 +94,10 @@ const Despesas = () => {
 
   const resetForm = () => {
     setFormData({
-      data: '',
+      data: getCurrentDateForInput(),
       descricao: '',
       categoria: '',
-      forma_pagamento: '',
+      forma_pagamento: FORMAS_PAGAMENTO[0], // PIX como padrão
       valor: ''
     });
     setEditingId(null);
